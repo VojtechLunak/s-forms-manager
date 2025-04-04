@@ -109,10 +109,20 @@ services:
       - ../shared/db-server/import:/root/graphdb-import:ro
       - db-server:/opt/graphdb/home
 
+  s-forms-manager-ui:
+    image: ghcr.io/vojtechlunak/s-forms-manager-ui:pr-3
+    container_name: ${RECORD_SET_NAME}-s-forms-manager-ui
+    ports:
+      - "3000:3000"
+    stdin_open: true
+    environment:
+      REACT_APP_BACKEND_API_URL: "http://localhost:${INTERNAL_HOST_PORT:-1235}/services/s-forms-manager"
+      REACT_APP_PORT: "3000"
+    depends_on:
+      - s-forms-manager
+
   s-forms-manager:
-    build:
-        context: ../../
-    image: ${RECORD_SET_NAME:-rm}-s-forms-manager-server
+    image: ghcr.io/vojtechlunak/s-forms-manager:pr-4
     container_name: ${RECORD_SET_NAME:-rm}-s-forms-manager-server
     ports:
       - "8080:8080"
