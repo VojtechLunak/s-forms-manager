@@ -17,10 +17,9 @@ package cz.cvut.kbss.sformsmanager.rest;
 import cz.cvut.kbss.sformsmanager.service.formgen.FormGenCachedService;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.net.URI;
@@ -45,6 +44,24 @@ public class SFormsController {
             @RequestParam(value = "contextUri") String contextUri
     ) throws URISyntaxException, IOException {
         return formGenCachedService.getFormGenRawJson(projectName, URI.create(contextUri)).getRawJson();
+    }
+
+    @RequestMapping(method = RequestMethod.GET, path = "s-forms-json-ld/{projectName}/{contextUri}")
+    public String getFormGenRawJsonGet(
+            @PathVariable(value = "projectName") String projectName,
+            @PathVariable(value = "contextUri") String contextUri
+    ) throws URISyntaxException, IOException {
+        String contextUriBase = "http://onto.fel.cvut.cz/ontologies/record-manager/";
+        contextUri = contextUriBase + contextUri;
+        return formGenCachedService.getFormGenRawJson(projectName, URI.create(contextUri)).getRawJson();
+    }
+
+    @RequestMapping(method = RequestMethod.POST, path = "s-forms-json-ld/{projectName}/{contextUri}")
+    public ResponseEntity<String> getFormGenRawJsonPost(
+            @PathVariable(value = "projectName") String projectName,
+            @PathVariable(value = "contextUri") String contextUri
+    ) {
+        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body("Not Implemented");
     }
 
     @RequestMapping(method = RequestMethod.POST, path = "s-forms-possible-values")
