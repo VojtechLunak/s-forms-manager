@@ -59,7 +59,6 @@ public class TicketingController {
         return new FormTicketsInCategoriesDTO(formTickets, formVersionTickets, questionTickets);
     }
 
-
     @RequestMapping(method = RequestMethod.POST)
     @ResponseStatus(value = HttpStatus.OK)
     public String create(@RequestBody CreateTicketRequest createTicketRequest) {
@@ -68,6 +67,17 @@ public class TicketingController {
 
         // return URL of created ticket
         return ticketingService.createTicket(createTicketRequest.getProjectName(), ticket);
+    }
+
+    @RequestMapping(method = RequestMethod.GET)
+    @ResponseStatus(value = HttpStatus.OK)
+    public String onRecordUpdate(@RequestParam String record) {
+        CreateTicketRequest createTicketRequest = new CreateTicketRequest();
+        createTicketRequest.setName("Record updated - " + record.split("/")[record.split("/").length - 1]);
+        createTicketRequest.setDescription(record);
+
+        TicketDTO ticket = new TicketDTO(createTicketRequest.getName(), createTicketRequest.getDescription(), null, null);
+        return ticketingService.createTicket("record-updates from rm", ticket);
     }
 
     private Stream<TicketDTO> getProjectTicketsStream(String projectName) {

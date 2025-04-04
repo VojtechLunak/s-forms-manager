@@ -77,6 +77,7 @@ services:
       repositoryUrl: "http://db-server:7200/repositories/record-manager-app"
       formGenRepositoryUrl: "http://db-server:7200/repositories/record-manager-formgen"
       formGenServiceUrl: "${FORMGEN_SERVICE_URL}"
+      onRecordUpdateServiceUrl: "http://s-forms-manager:8080/rest/ticket"
 
   s-pipes-engine:
     image: ghcr.io/kbss-cvut/ava-model/s-pipes-engine:latest
