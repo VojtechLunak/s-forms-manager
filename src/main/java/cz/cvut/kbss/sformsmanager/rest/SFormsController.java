@@ -14,16 +14,20 @@
  */
 package cz.cvut.kbss.sformsmanager.rest;
 
+import cz.cvut.kbss.sformsmanager.model.persisted.local.Project;
 import cz.cvut.kbss.sformsmanager.service.formgen.FormGenCachedService;
+import cz.cvut.kbss.sformsmanager.service.model.local.ProjectService;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Collections;
 
 @RestController
 @RequestMapping("/sforms")
@@ -32,10 +36,12 @@ public class SFormsController {
     private static final Logger log = org.slf4j.LoggerFactory.getLogger(SFormsController.class);
 
     private final FormGenCachedService formGenCachedService;
+    private final ProjectService projectService;
 
     @Autowired
-    public SFormsController(FormGenCachedService formGenCachedService) {
+    public SFormsController(FormGenCachedService formGenCachedService, ProjectService projectService) {
         this.formGenCachedService = formGenCachedService;
+        this.projectService = projectService;
     }
 
     @RequestMapping(method = RequestMethod.POST, path = "s-forms-json-ld")
@@ -59,9 +65,36 @@ public class SFormsController {
     @RequestMapping(method = RequestMethod.POST, path = "s-forms-json-ld/{projectName}/{contextUri}")
     public ResponseEntity<String> getFormGenRawJsonPost(
             @PathVariable(value = "projectName") String projectName,
-            @PathVariable(value = "contextUri") String contextUri
+            @PathVariable(value = "contextUri") String contextUri,
+            @RequestBody String jsonLdData
     ) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body("Not Implemented");
+        Project project = projectService.findByKey(projectName).orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND)
+        );
+        String baseGraphDbUrl = project.getFormGenRepositoryUrl() + "/statements";
+
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType("application/ld+json"));
+            headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+
+            String graphUri = "<http://onto.fel.cvut.cz/ontologies/templates/" + contextUri + ">";
+            String finalUrl = baseGraphDbUrl + "?context=" + graphUri;
+
+            HttpEntity<String> request = new HttpEntity<>(jsonLdData, headers);
+            RestTemplate restTemplate = new RestTemplate();
+            ResponseEntity<String> response = restTemplate.exchange(
+                    finalUrl,
+                    HttpMethod.POST,
+                    request,
+                    String.class
+            );
+
+            return ResponseEntity.status(HttpStatus.OK).body("Form template uploaded successfully to: " + project.getFormGenRepositoryUrl() + " at " + graphUri);
+        } catch (Exception e) {
+            log.error("Failed to upload form template to GraphDB", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error uploading form template to GraphDB.");
+        }
     }
 
     @RequestMapping(method = RequestMethod.POST, path = "s-forms-possible-values")
