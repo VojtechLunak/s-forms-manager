@@ -16,6 +16,7 @@ package cz.cvut.kbss.sformsmanager.rest;
 
 import cz.cvut.kbss.sformsmanager.model.persisted.local.Project;
 import cz.cvut.kbss.sformsmanager.service.formgen.FormGenCachedService;
+import cz.cvut.kbss.sformsmanager.service.formgen.FormTemplateExtractionService;
 import cz.cvut.kbss.sformsmanager.service.model.local.ProjectService;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,11 +37,13 @@ public class SFormsController {
     private static final Logger log = org.slf4j.LoggerFactory.getLogger(SFormsController.class);
 
     private final FormGenCachedService formGenCachedService;
+    private final FormTemplateExtractionService formTemplateExtractionService;
     private final ProjectService projectService;
 
     @Autowired
-    public SFormsController(FormGenCachedService formGenCachedService, ProjectService projectService) {
+    public SFormsController(FormGenCachedService formGenCachedService, FormTemplateExtractionService formTemplateExtractionService, ProjectService projectService) {
         this.formGenCachedService = formGenCachedService;
+        this.formTemplateExtractionService = formTemplateExtractionService;
         this.projectService = projectService;
     }
 
@@ -74,14 +77,16 @@ public class SFormsController {
         String baseGraphDbUrl = project.getFormGenRepositoryUrl() + "/statements";
 
         try {
+            String graphUri = "<http://onto.fel.cvut.cz/ontologies/templates/" + contextUri + ">";
+            String finalUrl = baseGraphDbUrl + "?context=" + graphUri;
+
+            String formTemplateJsonLdString = formTemplateExtractionService.extractFormTemplateFromFormData(jsonLdData, "http://onto.fel.cvut.cz/ontologies/templates/" + contextUri);
+
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.parseMediaType("application/ld+json"));
             headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
 
-            String graphUri = "<http://onto.fel.cvut.cz/ontologies/templates/" + contextUri + ">";
-            String finalUrl = baseGraphDbUrl + "?context=" + graphUri;
-
-            HttpEntity<String> request = new HttpEntity<>(jsonLdData, headers);
+            HttpEntity<String> request = new HttpEntity<>(formTemplateJsonLdString, headers);
             RestTemplate restTemplate = new RestTemplate();
             ResponseEntity<String> response = restTemplate.exchange(
                     finalUrl,
