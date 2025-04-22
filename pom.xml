@@ -64,6 +64,12 @@
             <version>2.18.3</version>
         </dependency>
 
+        <dependency>
+            <groupId>com.github.jsonld-java</groupId>
+            <artifactId>jsonld-java</artifactId>
+            <version>0.13.5</version>
+        </dependency>
+
         <!-- JOPA -->
         <dependency>
             <groupId>cz.cvut.kbss.jopa</groupId>
