@@ -14,6 +14,7 @@ import cz.cvut.kbss.sformsmanager.service.model.local.TicketToProjectRelationsSe
 import cz.cvut.kbss.sformsmanager.service.process.RemoteDataProcessingOrchestrator;
 import cz.cvut.kbss.sformsmanager.service.ticketing.TicketToProjectRelations;
 import cz.cvut.kbss.sformsmanager.service.ticketing.TicketingService;
+import cz.cvut.kbss.sformsmanager.utils.RecordPhase;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
@@ -69,6 +70,18 @@ public class TicketingController {
         List<TicketDTO> questionTickets = ticketToProjectRelationsService.filterQuestionTemplateTickets(projectTickets, recordSnapshot, projectName);
 
         return new FormTicketsInCategoriesDTO(formTickets, formVersionTickets, questionTickets);
+    }
+
+    @RequestMapping(method = RequestMethod.GET, path = "/resolve")
+    public ResponseEntity<String> resolveIssueAndOpenRecord(@RequestParam(value = "ticketId") String ticketId, @RequestParam(value = "formGenUri") String formGenUri) {
+        remoteFormGenJsonLoader.changeRecordPhaseForFormGen(formGenUri, RecordPhase.REJECTED);
+        try {
+            ticketingService.moveTicketToDeployed(ticketId);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+
+        return ResponseEntity.ok().build();
     }
 
     @RequestMapping(method = RequestMethod.POST)

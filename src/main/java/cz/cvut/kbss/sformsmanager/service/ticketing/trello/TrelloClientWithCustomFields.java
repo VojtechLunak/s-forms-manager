@@ -8,6 +8,12 @@ import com.julienvey.trello.domain.TrelloEntity;
 import com.julienvey.trello.impl.TrelloImpl;
 import com.julienvey.trello.impl.TrelloUrl;
 import com.julienvey.trello.impl.http.ApacheHttpClient;
+import cz.cvut.kbss.sformsmanager.exception.TrelloException;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.Arrays;
 import java.util.List;
@@ -30,6 +36,20 @@ public class TrelloClientWithCustomFields extends TrelloImpl {
         this.client = httpClient;
         this.applicationKey = applicationKey;
         this.accessToken = accessToken;
+    }
+
+    public void moveCardToList(String cardId, String listId) throws TrelloException {
+        String url = "https://api.trello.com/1/cards/" + cardId + "?idList=" + listId + "&key=" + applicationKey + "&token=" + accessToken;
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Content-Type", "application/json");
+
+        HttpEntity<String> requestEntity = new HttpEntity<>(null, headers);
+        RestTemplate restTemplate = new RestTemplate();
+        ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.PUT, requestEntity, String.class);
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            throw new TrelloException("Failed to move card with id " + cardId + " to list with id " + listId);
+        }
     }
 
     public void updateCustomFieldOnCard(String cardId, String customFieldId, CustomFieldValueWrapper value, Argument... args) {

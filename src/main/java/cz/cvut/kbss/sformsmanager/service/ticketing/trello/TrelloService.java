@@ -93,12 +93,40 @@ public class TrelloService implements TicketingService {
         return new TrelloCustomFields(formRelationId, formVersionRelationId, questionRelationId);
     }
 
+    @Override
+    public void moveTicketToDeployed(String cardId) {
+        List<TList> boardLists = trelloClient.getBoardLists(boardId);
+        if (boardLists.isEmpty()) {
+            throw new TrelloException("Trello board does not have any lists!");
+        }
+
+        TList deployedList = boardLists.stream()
+                .filter(list -> list.getName().equals("DEPLOYED"))
+                .findAny()
+                .orElseThrow(() -> new TrelloException("Trello list 'DEPLOYED' not found."));
+
+        Card card = this.getCardByShortId(cardId);
+        if (card == null) {
+            throw new TrelloException("Trello card with ID: " + cardId + " not found.");
+        } else {
+            trelloClient.moveCardToList(card.getId(), deployedList.getId());
+        }
+    }
+
     private Label getProjectLabel(String projectName) {
         List<Label> existingLabels = trelloClient.getBoardLabels(boardId);
         return existingLabels.stream()
                 .filter(label -> label.getName().equals(projectName))
                 .findAny()
                 .orElseThrow(() -> new TrelloException("There is no label with name: " + projectName));
+    }
+
+    private Card getCardByShortId(String shortId) {
+        List<Card> cards = trelloClient.getBoardCards(boardId);
+        return cards.stream()
+                .filter(card -> card.getIdShort().equals(shortId))
+                .findAny()
+                .orElseThrow(() -> new TrelloException("Card with short ID: " + shortId + " not found."));
     }
 
     private String getNewCardListId() {
