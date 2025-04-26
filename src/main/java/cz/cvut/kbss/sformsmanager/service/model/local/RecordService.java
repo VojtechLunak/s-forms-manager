@@ -82,4 +82,9 @@ public class RecordService {
         }
         return Optional.empty();
     }
+
+    // workaround for method findRecordSnapshotByContextUri, which for some reason does not work in some cases, don't want to break the compatibility
+    public Optional<RecordSnapshot> findByRemoteContextUri(String projectName, String recordContextUri) {
+        return recordSnapshotDAO.findFirstWhere(projectName, Vocabulary.p_hasRemoteContextURI, URI.create(recordContextUri));
+    }
 }

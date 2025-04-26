@@ -6,17 +6,23 @@ import cz.cvut.kbss.sformsmanager.model.dto.TicketDTO;
 import cz.cvut.kbss.sformsmanager.model.persisted.local.QuestionTemplateSnapshot;
 import cz.cvut.kbss.sformsmanager.model.persisted.local.RecordSnapshot;
 import cz.cvut.kbss.sformsmanager.model.request.CreateTicketRequest;
+import cz.cvut.kbss.sformsmanager.service.formgen.RemoteFormGenJsonLoader;
+import cz.cvut.kbss.sformsmanager.service.model.local.ProjectService;
 import cz.cvut.kbss.sformsmanager.service.model.local.QuestionTemplateService;
 import cz.cvut.kbss.sformsmanager.service.model.local.RecordService;
 import cz.cvut.kbss.sformsmanager.service.model.local.TicketToProjectRelationsService;
+import cz.cvut.kbss.sformsmanager.service.process.RemoteDataProcessingOrchestrator;
 import cz.cvut.kbss.sformsmanager.service.ticketing.TicketToProjectRelations;
 import cz.cvut.kbss.sformsmanager.service.ticketing.TicketingService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -28,13 +34,19 @@ public class TicketingController {
     private final TicketingService ticketingService;
     private final RecordService recordService;
     private final TicketToProjectRelationsService ticketToProjectRelationsService;
+    private final RemoteFormGenJsonLoader remoteFormGenJsonLoader;
+    private final RemoteDataProcessingOrchestrator processingService;
+    private final ProjectService projectService;
     private final QuestionTemplateService questionTemplateService;
 
     @Autowired
-    public TicketingController(TicketingService ticketingService, RecordService recordService, TicketToProjectRelationsService ticketToProjectRelationsService, QuestionTemplateService questionTemplateService) {
+    public TicketingController(TicketingService ticketingService, RecordService recordService, TicketToProjectRelationsService ticketToProjectRelationsService, RemoteFormGenJsonLoader remoteFormGenJsonLoader, RemoteDataProcessingOrchestrator processingService, ProjectService projectService, QuestionTemplateService questionTemplateService) {
         this.ticketingService = ticketingService;
         this.recordService = recordService;
         this.ticketToProjectRelationsService = ticketToProjectRelationsService;
+        this.remoteFormGenJsonLoader = remoteFormGenJsonLoader;
+        this.processingService = processingService;
+        this.projectService = projectService;
         this.questionTemplateService = questionTemplateService;
     }
 
@@ -71,13 +83,64 @@ public class TicketingController {
 
     @RequestMapping(method = RequestMethod.GET)
     @ResponseStatus(value = HttpStatus.OK)
-    public String onRecordUpdate(@RequestParam String record) {
+    public String onRecordUpdate(@RequestParam String record) throws URISyntaxException, IOException {
         CreateTicketRequest createTicketRequest = new CreateTicketRequest();
-        createTicketRequest.setName("Record updated - " + record.split("/")[record.split("/").length - 1]);
-        createTicketRequest.setDescription(record);
+        String recordKey = record.split("/")[record.split("/").length - 1];
+        createTicketRequest.setName("Record updated - " + recordKey);
 
-        TicketDTO ticket = new TicketDTO(createTicketRequest.getName(), createTicketRequest.getDescription(), null, null);
-        return ticketingService.createTicket("record-updates from rm", ticket);
+
+        String timestamp = String.valueOf(System.currentTimeMillis());
+        String formGenURI = "http://onto.fel.cvut.cz/ontologies/record-manager/formGenVirtual" + timestamp;
+
+        // create virtual formGen from updated record
+        remoteFormGenJsonLoader.generateVirtualFormGen(record, formGenURI);
+
+        // export the virtual formGen record
+        String exportedVirtualFormGen = remoteFormGenJsonLoader.exportGraph(formGenURI, "http://localhost:1235/services/db-server/repositories/record-manager-app");
+
+        // import the virtual formGen record into the formGen repository
+        remoteFormGenJsonLoader.importGraph(formGenURI, "http://localhost:1235/services/db-server/repositories/record-manager-formgen", exportedVirtualFormGen);
+
+        // delete the virtual formGen record from the app repository
+        remoteFormGenJsonLoader.deleteGraph(formGenURI, "http://localhost:1235/services/db-server/repositories/record-manager-app");
+
+        //get form structure
+        String rawFormJson = remoteFormGenJsonLoader.getFormStructure(formGenURI);
+
+        Map<String, String> metadata = remoteFormGenJsonLoader.getRecordMetadata(formGenURI, record);
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("Record metadata:\n");
+        metadata.forEach((key, value) -> sb.append("- ").append(key).append(": ").append(value).append("\n"));
+
+        //Add link to the ticket description - SForms Editor
+        String sfeLink = "https://tomasklima.vercel.app/?formUrl=http://localhost:8080/rest/sforms/s-forms-json-ld/test-standalone-record-manager-docker-local/" + formGenURI.substring(formGenURI.lastIndexOf('/') + 1);
+        sb.append("\nLink to the SForms Editor: ").append(sfeLink).append("\n");
+
+        //Add link to the ticket description - Record Manager
+        String rmLink = "http://localhost:1235/record-manager/records/" + recordKey;
+        sb.append("\nLink to the Record Manager: ").append(rmLink).append("\n");
+
+        createTicketRequest.setRecordContextUri(formGenURI);
+        createTicketRequest.setRelateToRecordSnapshot(true);
+        createTicketRequest.setRelateToFormVersion(true);
+
+        // process new formGen as Record Snapshot
+        String projectName = projectService.findAll().get(1).getKey();
+        processingService.processDataSnapshotInRemoteContext(projectName, URI.create(formGenURI));
+        RecordSnapshot recordSnapshot = recordService.findByRemoteContextUri(projectName, formGenURI)
+                .orElseThrow(() -> new ResourceNotFoundException("Record Snapshot with context uri " + formGenURI + " not found"));
+
+        String linkUrl = "http://localhost:3000/browse/forms/" + projectName + "/record/" + recordSnapshot.getKey();
+        sb.append("\nLink to the SForms Manager: ").append(linkUrl).append("\n");
+        createTicketRequest.setDescription(sb.toString());
+        createTicketRequest.setProjectName(projectName);
+
+        // create ticket relations
+        TicketToProjectRelations relations = ticketToProjectRelationsService.createRelationsFromRequest(createTicketRequest);
+
+        TicketDTO ticket = new TicketDTO(createTicketRequest.getName(), createTicketRequest.getDescription(), null, relations);
+        return ticketingService.createTicket(createTicketRequest.getProjectName(), ticket);
     }
 
     private Stream<TicketDTO> getProjectTicketsStream(String projectName) {
