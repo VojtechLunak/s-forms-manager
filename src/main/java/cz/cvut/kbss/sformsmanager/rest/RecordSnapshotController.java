@@ -111,10 +111,11 @@ public class RecordSnapshotController {
         return new SubmittedAnswersCompareResultDTO(numberOfUnchangedAnswers, leftAnswers, rightAnswers, changedAnswers);
     }
 
-    @RequestMapping(method = RequestMethod.GET, path = "/{formGenURI}/phase")
-    public void changeRecordPhase(@PathVariable String formGenURI) {
+    @RequestMapping(method = RequestMethod.GET, path = "/{formGenURI}/{phase}")
+    public void changeRecordPhase(@PathVariable String formGenURI, @PathVariable String phase) {
         formGenURI = "http://onto.fel.cvut.cz/ontologies/record-manager/" + formGenURI;
-        remoteFormGenJsonLoader.changeRecordPhaseForFormGen(formGenURI, RecordPhase.REJECTED);
+        RecordPhase recordPhase = RecordPhase.valueOf(phase.toUpperCase());
+        remoteFormGenJsonLoader.changeRecordPhaseForFormGen(formGenURI, recordPhase);
     }
 
     private RecordSnapshotDTO mapRecord(RecordSnapshot recordSnapshot) { // TODO: struts https://mapstruct.org/

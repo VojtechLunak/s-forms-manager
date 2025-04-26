@@ -281,20 +281,35 @@ public class RemoteFormGenJsonLoader implements FormGenJsonLoader {
                 String.class
         );
 
-        String recordSparql = response.getBody();
+        String recordIRISparql = "";
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode root = mapper.readTree(response.getBody());
+            JsonNode bindings = root.get("results").get("bindings").get(0);
+            if (bindings.has("record")) recordIRISparql = bindings.get("record").get("value").asText();
+        } catch (Exception e) {
+            log.warn("Failed to parse metadata SPARQL result", e);
+        }
 
         String changeRecordPhaseSparql = String.format("""
                 PREFIX srm: <http://onto.fel.cvut.cz/ontologies/record-manager/>
                 
-                WITH <%s>
-                DELETE {
-                  <%s> srm:has-phase ?oldPhase .
-                }
-                INSERT {
-                  <%s> srm:has-phase <%s> .
-                }
-                
-                """, recordSparql, recordSparql, recordSparql, recordPhase.toString());
+                 WITH <%s>
+                 DELETE {
+                     <%s> srm:has-phase ?phase .
+                 }
+                 INSERT {
+                     <%s> srm:has-phase <%s> .
+                 }
+                 WHERE {
+                     <%s> a srm:patient-record .
+                     VALUES ?phase {
+                       <%s>
+                       <%s>
+                       <%s>
+                     }
+                 }
+                """, recordIRISparql, recordIRISparql, recordIRISparql, recordPhase.toString(), recordIRISparql, RecordPhase.REJECTED, RecordPhase.OPEN, RecordPhase.COMPLETE);
 
         headers = new HttpHeaders();
         headers.setContentType(MediaType.valueOf("application/sparql-update"));
