@@ -64,7 +64,7 @@ public class TicketingController {
 
         List<TicketDTO> projectTickets = getProjectTicketsStream(projectName).collect(Collectors.toList());
 
-        List<TicketDTO> formTickets = ticketToProjectRelationsService.filterRecordSnapshotTickets(projectTickets, recordSnapshot);
+        List<TicketDTO> formTickets = ticketToProjectRelationsService.filterRecordSnapshotTicketsFromDescription(projectTickets, recordSnapshot);
         List<TicketDTO> formVersionTickets = ticketToProjectRelationsService.filterFormTemplateVersionTickets(projectTickets, recordSnapshot);
         List<TicketDTO> questionTickets = ticketToProjectRelationsService.filterQuestionTemplateTickets(projectTickets, recordSnapshot, projectName);
 

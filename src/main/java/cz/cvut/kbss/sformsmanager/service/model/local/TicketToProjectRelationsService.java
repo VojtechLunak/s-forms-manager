@@ -59,6 +59,14 @@ public class TicketToProjectRelationsService {
         return ticketingService.createRelations(recordSnapshotRelationContextUri, formVersionRelationId, questionRelationQOP);
     }
 
+    // extracting the ticket relations to records based on the description - custom field in trello are premium feature as of 04/2025
+    public List<TicketDTO> filterRecordSnapshotTicketsFromDescription(List<TicketDTO> projectTickets, RecordSnapshot recordSnapshot) {
+        return projectTickets.stream().filter(ticket -> {
+            String ticketDescription = ticket.getDescription();
+            return ticketDescription != null && ticketDescription.contains(recordSnapshot.getKey());
+        }).collect(Collectors.toList());
+    }
+
     public List<TicketDTO> filterRecordSnapshotTickets(List<TicketDTO> projectTickets, RecordSnapshot recordSnapshot) {
         return projectTickets.stream().filter(ticket -> {
             String formRelationId = ticket.getProjectRelations().getRelatedRecordSnapshot();
