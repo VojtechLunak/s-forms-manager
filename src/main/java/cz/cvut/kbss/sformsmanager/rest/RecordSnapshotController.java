@@ -7,13 +7,13 @@ import cz.cvut.kbss.sformsmanager.exception.VersionNotFoundException;
 import cz.cvut.kbss.sformsmanager.model.dto.*;
 import cz.cvut.kbss.sformsmanager.model.persisted.local.RecordSnapshot;
 import cz.cvut.kbss.sformsmanager.model.persisted.local.SubmittedAnswer;
+import cz.cvut.kbss.sformsmanager.service.formgen.RemoteFormGenJsonLoader;
 import cz.cvut.kbss.sformsmanager.service.model.local.RecordService;
 import cz.cvut.kbss.sformsmanager.service.model.local.SubmittedAnswerService;
+import cz.cvut.kbss.sformsmanager.utils.RecordPhase;
+import jakarta.websocket.server.PathParam;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.util.*;
@@ -26,11 +26,13 @@ public class RecordSnapshotController {
 
     private final RecordService recordService;
     private final SubmittedAnswerService answerService;
+    private final RemoteFormGenJsonLoader remoteFormGenJsonLoader;
 
     @Autowired
-    public RecordSnapshotController(RecordService recordService, SubmittedAnswerService answerService) {
+    public RecordSnapshotController(RecordService recordService, SubmittedAnswerService answerService, RemoteFormGenJsonLoader remoteFormGenJsonLoader) {
         this.recordService = recordService;
         this.answerService = answerService;
+        this.remoteFormGenJsonLoader = remoteFormGenJsonLoader;
     }
 
     @RequestMapping(method = RequestMethod.GET, path = "find")
@@ -38,7 +40,7 @@ public class RecordSnapshotController {
             @RequestParam(value = "projectName") String projectName,
             @RequestParam(value = "recordSnapshotContextUri") String recordSnapshotContextUri) {
 
-        return recordService.findRecordSnapshotByContextUri(projectName, URI.create(recordSnapshotContextUri))
+        return recordService.findByRemoteContextUri(projectName, recordSnapshotContextUri)
                 .map(record -> mapRecord(record))
                 .orElseThrow(() -> new RecordSnapshotNotFound("RecordSnapshot not found."));
     }
@@ -107,6 +109,12 @@ public class RecordSnapshotController {
         List<SubmittedAnswerDTO> leftAnswers = answers1.stream().map(answer -> new SubmittedAnswerDTO(answer.getQuestionOrigin(), answer.getQuestionLabel(), answer.getTextValue())).collect(Collectors.toList());
         // answers1 now only contain answers that are not in answers2
         return new SubmittedAnswersCompareResultDTO(numberOfUnchangedAnswers, leftAnswers, rightAnswers, changedAnswers);
+    }
+
+    @RequestMapping(method = RequestMethod.GET, path = "/{formGenURI}/phase")
+    public void changeRecordPhase(@PathVariable String formGenURI) {
+        formGenURI = "http://onto.fel.cvut.cz/ontologies/record-manager/" + formGenURI;
+        remoteFormGenJsonLoader.changeRecordPhaseForFormGen(formGenURI, RecordPhase.REJECTED);
     }
 
     private RecordSnapshotDTO mapRecord(RecordSnapshot recordSnapshot) { // TODO: struts https://mapstruct.org/

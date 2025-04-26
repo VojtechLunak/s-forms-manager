@@ -36,8 +36,9 @@ public class TicketToProjectRelationsService {
     public TicketToProjectRelations createRelationsFromRequest(CreateTicketRequest createTicketRequest) {
         String projectName = createTicketRequest.getProjectName();
 
-        RecordSnapshot recordSnapshot = recordService.findRecordSnapshotByContextUri(projectName, URI.create(createTicketRequest.getRecordContextUri()))
-                .orElseThrow(() -> new RecordSnapshotNotFound("RecordSnapshot specified at the ticket not found. ContextURI: " + createTicketRequest.getRecordContextUri()));
+        RecordSnapshot recordSnapshot = recordService.findByRemoteContextUri(projectName, createTicketRequest.getRecordContextUri())
+               .orElseThrow(() -> new RecordSnapshotNotFound("RecordSnapshot specified at the ticket not found. Key: " + createTicketRequest.getRecordContextUri()));
+
 
         String recordSnapshotRelationContextUri = null;
         if (createTicketRequest.isRelateToRecordSnapshot()) {
