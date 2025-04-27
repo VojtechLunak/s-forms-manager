@@ -25,10 +25,10 @@ public class AppInitializer {
     @Value("${APP_REPOSITORY_URL:}")
     private String defaultAppRepositoryUrl;
 
-    @Value("{FORMGEN_REPOSITORY_URL:}")
+    @Value("${FORMGEN_REPOSITORY_URL:}")
     private String defaultFormGenRepositoryUrl;
 
-    @Value("SPIPES_SERVICE_URL:")
+    @Value("${SPIPES_SERVICE_URL:}")
     private String defaultSpipesServiceUrl;
 
     @Value("classpath:templates/remote/recordSnapshotRemoteData.sparql")
