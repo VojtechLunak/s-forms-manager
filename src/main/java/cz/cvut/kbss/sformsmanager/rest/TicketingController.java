@@ -130,10 +130,11 @@ public class TicketingController {
         // delete the virtual formGen record from the app repository
         remoteFormGenJsonLoader.deleteGraph(formGenURI, project.getAppRepositoryUrl());
 
-        //get form structure in jsonld format - this is also used when processing the remote formGen todo remove
-        String rawFormJson = remoteFormGenJsonLoader.getFormStructure(formGenURI, project);
-
         Map<String, String> metadata = remoteFormGenJsonLoader.getRecordMetadata(formGenURI, record, project.getFormGenRepositoryUrl());
+        String phase = metadata.get("Phase");
+        if (phase == null || !phase.equals(RecordPhase.REJECTED.toString())) {
+            return "No ticket created. Record phase is not 'rejected'.";
+        }
 
         StringBuilder sb = new StringBuilder();
         sb.append("Record metadata:\n");
