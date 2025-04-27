@@ -251,7 +251,7 @@ public class RemoteFormGenJsonLoader implements FormGenJsonLoader {
         return resultMap;
     }
 
-    public void changeRecordPhaseForFormGen(String formGen, RecordPhase recordPhase) {
+    public void changeRecordPhaseForFormGen(String formGen, RecordPhase recordPhase, String formGenRepoUrl) {
         String getRecordSparql = String.format("""
                 PREFIX srm: <http://onto.fel.cvut.cz/ontologies/record-manager/>
                 
@@ -268,7 +268,7 @@ public class RemoteFormGenJsonLoader implements FormGenJsonLoader {
         HttpEntity<String> sparqlRequest = new HttpEntity<>(getRecordSparql, headers);
         RestTemplate restTemplate = new RestTemplate();
         ResponseEntity<String> response = restTemplate.exchange(
-                "http://localhost:1235/services/db-server/repositories/record-manager-formgen",
+                formGenRepoUrl,
                 HttpMethod.POST,
                 sparqlRequest,
                 String.class
