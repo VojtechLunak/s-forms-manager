@@ -3,6 +3,7 @@ package cz.cvut.kbss.sformsmanager.rest;
 import cz.cvut.kbss.sformsmanager.exception.ResourceNotFoundException;
 import cz.cvut.kbss.sformsmanager.model.dto.FormTicketsInCategoriesDTO;
 import cz.cvut.kbss.sformsmanager.model.dto.TicketDTO;
+import cz.cvut.kbss.sformsmanager.model.persisted.local.Project;
 import cz.cvut.kbss.sformsmanager.model.persisted.local.QuestionTemplateSnapshot;
 import cz.cvut.kbss.sformsmanager.model.persisted.local.RecordSnapshot;
 import cz.cvut.kbss.sformsmanager.model.request.CreateTicketRequest;
@@ -94,6 +95,15 @@ public class TicketingController {
         return ticketingService.createTicket(createTicketRequest.getProjectName(), ticket);
     }
 
+    /***
+     * This method is called when a record is updated in the remote Record Manager. There is no
+     * mechanism to ensure from where the update is called, so it is assumed that the update is from
+     * the "default" project in SForms Manager.
+     * @param record URI of Record in remote Record Manager that is being updated
+     * @return
+     * @throws URISyntaxException
+     * @throws IOException
+     */
     @RequestMapping(method = RequestMethod.GET)
     @ResponseStatus(value = HttpStatus.OK)
     public String onRecordUpdate(@RequestParam String record) throws URISyntaxException, IOException {
@@ -101,33 +111,35 @@ public class TicketingController {
         String recordKey = record.split("/")[record.split("/").length - 1];
         createTicketRequest.setName("Record updated - " + recordKey);
 
-
         String timestamp = String.valueOf(System.currentTimeMillis());
         String formGenURI = "http://onto.fel.cvut.cz/ontologies/record-manager/formGenVirtual" + timestamp;
 
+        // get the default project
+        Project project = projectService.findAll().get(0);
+
         // create virtual formGen from updated record
-        remoteFormGenJsonLoader.generateVirtualFormGen(record, formGenURI);
+        remoteFormGenJsonLoader.generateVirtualFormGen(record, formGenURI, project.getAppRepositoryUrl());
 
         // export the virtual formGen record
-        String exportedVirtualFormGen = remoteFormGenJsonLoader.exportGraph(formGenURI, "http://localhost:1235/services/db-server/repositories/record-manager-app");
+        String exportedVirtualFormGen = remoteFormGenJsonLoader.exportGraph(formGenURI, project.getAppRepositoryUrl());
 
         // import the virtual formGen record into the formGen repository
-        remoteFormGenJsonLoader.importGraph(formGenURI, "http://localhost:1235/services/db-server/repositories/record-manager-formgen", exportedVirtualFormGen);
+        remoteFormGenJsonLoader.importGraph(formGenURI, project.getFormGenRepositoryUrl(), exportedVirtualFormGen);
 
         // delete the virtual formGen record from the app repository
-        remoteFormGenJsonLoader.deleteGraph(formGenURI, "http://localhost:1235/services/db-server/repositories/record-manager-app");
+        remoteFormGenJsonLoader.deleteGraph(formGenURI, project.getAppRepositoryUrl());
 
-        //get form structure
-        String rawFormJson = remoteFormGenJsonLoader.getFormStructure(formGenURI);
+        //get form structure in jsonld format - this is also used when processing the remote formGen todo remove
+        String rawFormJson = remoteFormGenJsonLoader.getFormStructure(formGenURI, project);
 
-        Map<String, String> metadata = remoteFormGenJsonLoader.getRecordMetadata(formGenURI, record);
+        Map<String, String> metadata = remoteFormGenJsonLoader.getRecordMetadata(formGenURI, record, project.getFormGenRepositoryUrl());
 
         StringBuilder sb = new StringBuilder();
         sb.append("Record metadata:\n");
         metadata.forEach((key, value) -> sb.append("- ").append(key).append(": ").append(value).append("\n"));
 
-        //Add link to the ticket description - SForms Editor
-        String sfeLink = "https://tomasklima.vercel.app/?formUrl=http://localhost:8080/rest/sforms/s-forms-json-ld/test-standalone-record-manager-docker-local/" + formGenURI.substring(formGenURI.lastIndexOf('/') + 1);
+        //Add link to the ticket description - SForms Editor [generalize the url?]
+        String sfeLink = "https://tomasklima.vercel.app/?formUrl=http://localhost:8080/rest/sforms/s-forms-json-ld/" + project.getKey() + "/" + formGenURI.substring(formGenURI.lastIndexOf('/') + 1);
         sb.append("\nLink to the SForms Editor: ").append(sfeLink).append("\n");
 
         //Add link to the ticket description - Record Manager
@@ -138,8 +150,8 @@ public class TicketingController {
         createTicketRequest.setRelateToRecordSnapshot(true);
         createTicketRequest.setRelateToFormVersion(true);
 
-        // process new formGen as Record Snapshot
-        String projectName = projectService.findAll().get(1).getKey();
+        // process new formGen as Record Snapshotd
+        String projectName = project.getKey();
         processingService.processDataSnapshotInRemoteContext(projectName, URI.create(formGenURI));
         RecordSnapshot recordSnapshot = recordService.findByRemoteContextUri(projectName, formGenURI)
                 .orElseThrow(() -> new ResourceNotFoundException("Record Snapshot with context uri " + formGenURI + " not found"));

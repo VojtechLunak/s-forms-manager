@@ -123,19 +123,12 @@ public class RemoteFormGenJsonLoader implements FormGenJsonLoader {
     }
 
 
-    public String getFormStructure(String formGenUri) throws URISyntaxException {
-        Project project = projectDAO.findAll().get(1);
-
+    public String getFormStructure(String formGenUri, Project project) throws URISyntaxException {
         final Map<String, String> params = new HashMap<>();
         params.put(RECORD_GRAPH_ID_PARAM, formGenUri);
-        params.put(REPOSITORY_URL_PARAM, "http://db-server:7200/repositories/record-manager-app");
-        params.put(FORMGEN_REPOSITORY_URL_PARAM, "http://db-server:7200/repositories/record-manager-formgen");
-        //params.put("sessionCookie", sessionCookie);
-        String remoteUrl = "http://localhost:9999/s-pipes/service?_pId=clone-form";
-        //final HttpHeaders httpHeaders = processHeaders(params);
-
-        String rawFormJson = dataLoader.loadDataFromUrl(remoteUrl, params, Collections.emptyMap());
-        return rawFormJson;
+        params.put(REPOSITORY_URL_PARAM, project.getAppRepositoryUrl());
+        params.put(FORMGEN_REPOSITORY_URL_PARAM, project.getFormGenRepositoryUrl());
+        return dataLoader.loadDataFromUrl(project.getFormGenServiceUrl(), params, Collections.emptyMap());
     }
 
     private HttpHeaders processHeaders(Map<String, String> params) {
@@ -157,14 +150,14 @@ public class RemoteFormGenJsonLoader implements FormGenJsonLoader {
         return dataLoader.loadDataFromUrl(query, Collections.emptyMap(), Collections.emptyMap());
     }
 
-    public void generateVirtualFormGen(String recordUri, String formGenUri) {
+    public void generateVirtualFormGen(String recordUri, String formGenUri, String appRepoUrl) {
         String sparql = generateFormGenInsertQuery(recordUri, formGenUri);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.valueOf("application/sparql-update"));
         HttpEntity<String> sparqlRequest = new HttpEntity<>(sparql, headers);
         RestTemplate restTemplate = new RestTemplate();
-        restTemplate.exchange("http://localhost:1235/services/db-server/repositories/record-manager-app/statements",
+        restTemplate.exchange(appRepoUrl + "/statements",
                 HttpMethod.POST, sparqlRequest, String.class);
     }
 
@@ -212,7 +205,7 @@ public class RemoteFormGenJsonLoader implements FormGenJsonLoader {
         """, formGenUri, recordUri);
     }
 
-    public Map<String, String> getRecordMetadata(String formGenUri, String recordUri) {
+    public Map<String, String> getRecordMetadata(String formGenUri, String recordUri, String formGenRepoUrl) {
         String sparql = String.format("""
         PREFIX dcterms: <http://purl.org/dc/terms/>
         PREFIX srm: <http://onto.fel.cvut.cz/ontologies/record-manager/>
@@ -235,7 +228,7 @@ public class RemoteFormGenJsonLoader implements FormGenJsonLoader {
         HttpEntity<String> request = new HttpEntity<>(sparql, headers);
         RestTemplate restTemplate = new RestTemplate();
         ResponseEntity<String> response = restTemplate.exchange(
-                "http://localhost:1235/services/db-server/repositories/record-manager-formgen",
+                formGenRepoUrl,
                 HttpMethod.POST,
                 request,
                 String.class
