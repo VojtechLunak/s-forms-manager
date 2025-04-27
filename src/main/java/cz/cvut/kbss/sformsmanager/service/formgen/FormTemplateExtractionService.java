@@ -1,10 +1,8 @@
 package cz.cvut.kbss.sformsmanager.service.formgen;
 
 import com.github.jsonldjava.core.JsonLdProcessor;
-import com.github.jsonldjava.utils.Obj;
 import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.core.type.TypeReference;
 
 import java.io.IOException;
@@ -31,9 +29,11 @@ public class FormTemplateExtractionService {
         for (Map<String, Object> node : graph) {
             List<String> types = getAsList(node.get("@type"));
             if (!types.contains("doc:answer")) {
-                // Remove has_answer fields
                 node.remove("has_answer");
                 node.remove("http://onto.fel.cvut.cz/ontologies/form/has_answer");
+                node.remove("form:has-origin-path-id");
+                node.remove("has-origin-path-id");
+                node.remove("http://onto.fel.cvut.cz/ontologies/form/has-origin-path-id");
                 filteredGraph.add(node);
             }
         }
@@ -44,7 +44,12 @@ public class FormTemplateExtractionService {
             Object id = node.get("@id");
             Object origin = node.get("has-question-origin");
             if (id != null && origin != null) {
-                idToOriginMap.put(id.toString(), origin);
+                String originStr = origin.toString();
+                String adjustedOrigin = originStr.replaceAll("-qo$", "");
+                if (originStr.equals(adjustedOrigin)) {
+                    adjustedOrigin = originStr + "-" + System.currentTimeMillis() % 10000;
+                }
+                idToOriginMap.put(id.toString(), adjustedOrigin);
             }
         }
 
@@ -52,17 +57,14 @@ public class FormTemplateExtractionService {
         List<Map<String, Object>> updatedGraph = new ArrayList<>();
         for (Map<String, Object> node : filteredGraph) {
             Object updatedNodeObj = updateIdsRecursively(node, idToOriginMap);
-            if (updatedNodeObj instanceof Map<?, ?>) {
+            if (updatedNodeObj instanceof Map<?, ?> updatedNodeMap) {
                 Map<String, Object> updatedNode = new LinkedHashMap<>();
-                for (Map.Entry<?, ?> entry : ((Map<?, ?>) updatedNodeObj).entrySet()) {
-                    updatedNode.put(entry.getKey().toString(), entry.getValue());
-                }
+                updatedNodeMap.forEach((key, value) -> updatedNode.put(key.toString(), value));
                 if (updatedNode.get("has-question-origin") != null) {
-                    updatedNode.put("@id", updatedNode.get("has-question-origin"));
+                    String origin = updatedNode.get("has-question-origin").toString();
+                    updatedNode.put("@id", idToOriginMap.getOrDefault(origin, updatedNode.get("@id")));
                 }
                 updatedGraph.add(updatedNode);
-            } else {
-                throw new IllegalArgumentException("Unexpected structure returned by updateIdsRecursively");
             }
         }
 
@@ -135,7 +137,10 @@ public class FormTemplateExtractionService {
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("No node with @type 'form-template' found"));
         formTemplateNode.put("@id", graphUri);
-        formTemplateNode.put("http://onto.fel.cvut.cz/ontologies/form/has-question-origin", graphUri);
+
+        Map<String, Object> questionOriginNode = new HashMap<>();
+        questionOriginNode.put("@id", graphUri + "-qo");
+        formTemplateNode.put("http://onto.fel.cvut.cz/ontologies/form/has-question-origin", questionOriginNode);
 
         // Build the result
         Map<String, Object> result = Map.of(
