@@ -74,11 +74,9 @@ public class TicketingController {
     }
 
     @RequestMapping(method = RequestMethod.GET, path = "/resolve")
-    public ResponseEntity<String> resolveIssueAndOpenRecord(@RequestParam(value = "ticketId") String ticketId,
-                                                            @RequestParam(value = "formGenUri") String formGenUri,
-                                                            @RequestParam(value = "projectName") String projectName) {
+    public ResponseEntity<String> resolveIssueAndOpenRecord(@RequestParam(value = "ticketId") String ticketId, @RequestParam(value = "formGenUri") String formGenUri, @RequestParam(value = "projectName") String projectName) {
         Project project = projectService.findByKey(projectName).orElseThrow();
-        remoteFormGenJsonLoader.changeRecordPhaseForFormGen(formGenUri, RecordPhase.REJECTED, project.getFormGenRepositoryUrl());
+        remoteFormGenJsonLoader.changeRecordPhaseForFormGen(formGenUri, RecordPhase.REJECTED, project.getFormGenRepositoryUrl(), project.getAppRepositoryUrl());
         try {
             ticketingService.moveTicketToDeployed(ticketId);
         } catch (Exception e) {
