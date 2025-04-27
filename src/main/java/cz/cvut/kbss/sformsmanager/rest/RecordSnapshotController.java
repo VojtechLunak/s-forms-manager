@@ -5,9 +5,11 @@ import com.github.jsonldjava.shaded.com.google.common.collect.Sets;
 import cz.cvut.kbss.sformsmanager.exception.RecordSnapshotNotFound;
 import cz.cvut.kbss.sformsmanager.exception.VersionNotFoundException;
 import cz.cvut.kbss.sformsmanager.model.dto.*;
+import cz.cvut.kbss.sformsmanager.model.persisted.local.Project;
 import cz.cvut.kbss.sformsmanager.model.persisted.local.RecordSnapshot;
 import cz.cvut.kbss.sformsmanager.model.persisted.local.SubmittedAnswer;
 import cz.cvut.kbss.sformsmanager.service.formgen.RemoteFormGenJsonLoader;
+import cz.cvut.kbss.sformsmanager.service.model.local.ProjectService;
 import cz.cvut.kbss.sformsmanager.service.model.local.RecordService;
 import cz.cvut.kbss.sformsmanager.service.model.local.SubmittedAnswerService;
 import cz.cvut.kbss.sformsmanager.utils.RecordPhase;
@@ -25,12 +27,14 @@ import java.util.stream.Collectors;
 public class RecordSnapshotController {
 
     private final RecordService recordService;
+    private final ProjectService projectService;
     private final SubmittedAnswerService answerService;
     private final RemoteFormGenJsonLoader remoteFormGenJsonLoader;
 
     @Autowired
-    public RecordSnapshotController(RecordService recordService, SubmittedAnswerService answerService, RemoteFormGenJsonLoader remoteFormGenJsonLoader) {
+    public RecordSnapshotController(RecordService recordService, ProjectService projectService, SubmittedAnswerService answerService, RemoteFormGenJsonLoader remoteFormGenJsonLoader) {
         this.recordService = recordService;
+        this.projectService = projectService;
         this.answerService = answerService;
         this.remoteFormGenJsonLoader = remoteFormGenJsonLoader;
     }
@@ -111,11 +115,12 @@ public class RecordSnapshotController {
         return new SubmittedAnswersCompareResultDTO(numberOfUnchangedAnswers, leftAnswers, rightAnswers, changedAnswers);
     }
 
-    @RequestMapping(method = RequestMethod.GET, path = "/{formGenURI}/{phase}")
-    public void changeRecordPhase(@PathVariable String formGenURI, @PathVariable String phase) {
+    @RequestMapping(method = RequestMethod.POST, path = "/{formGenURI}/{phase}")
+    public void changeRecordPhase(@PathVariable String formGenURI, @PathVariable String phase, @RequestParam(value = "projectName") String projectName) {
         formGenURI = "http://onto.fel.cvut.cz/ontologies/record-manager/" + formGenURI;
         RecordPhase recordPhase = RecordPhase.valueOf(phase.toUpperCase());
-        remoteFormGenJsonLoader.changeRecordPhaseForFormGen(formGenURI, recordPhase);
+        Project project = projectService.findByKey(projectName).orElseThrow();
+        remoteFormGenJsonLoader.changeRecordPhaseForFormGen(formGenURI, recordPhase, project.getFormGenRepositoryUrl(), project.getAppRepositoryUrl());
     }
 
     private RecordSnapshotDTO mapRecord(RecordSnapshot recordSnapshot) { // TODO: struts https://mapstruct.org/
