@@ -47,7 +47,7 @@ public class FormTemplateExtractionService {
                 String originStr = origin.toString();
                 String adjustedOrigin = originStr.replaceAll("-qo$", "");
                 if (originStr.equals(adjustedOrigin)) {
-                    adjustedOrigin = originStr + "-" + System.currentTimeMillis() % 10000;
+                    adjustedOrigin = originStr + "-" + System.currentTimeMillis() % 10000 + new Random().nextInt(5000);
                 }
                 idToOriginMap.put(id.toString(), adjustedOrigin);
             }
