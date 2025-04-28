@@ -87,4 +87,12 @@ public class RecordService {
     public Optional<RecordSnapshot> findByRemoteContextUri(String projectName, String recordContextUri) {
         return recordSnapshotDAO.findFirstWhere(projectName, Vocabulary.p_hasRemoteContextURI, URI.create(recordContextUri));
     }
+
+    // workaround since Record Snapshot persist remoteContextURI as URI and not as strings
+    public Optional<RecordSnapshot> findRecordSnapshotByRemoteContext(String projectName, String remoteContextUri) {
+        List<RecordSnapshot> rs = recordSnapshotDAO.findAll(projectName);
+        return rs.stream()
+                .filter(recordSnapshot -> recordSnapshot.getRemoteContextURI().toString().equals(remoteContextUri))
+                .findFirst();
+    }
 }

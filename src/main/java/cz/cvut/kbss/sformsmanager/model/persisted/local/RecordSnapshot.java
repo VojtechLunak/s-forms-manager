@@ -11,7 +11,7 @@ import java.util.Set;
 @OWLClass(iri = Vocabulary.RecordSnapshot)
 public class RecordSnapshot extends LocalEntity implements Serializable {
 
-    @OWLObjectProperty(iri = Vocabulary.p_hasRecord)
+    @OWLObjectProperty(iri = Vocabulary.p_hasRecord, fetch = FetchType.EAGER)
     private Record record;
 
     @OWLObjectProperty(iri = Vocabulary.p_hasRecordVersion, fetch = FetchType.EAGER)

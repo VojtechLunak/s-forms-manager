@@ -44,8 +44,8 @@ public class RecordSnapshotController {
             @RequestParam(value = "projectName") String projectName,
             @RequestParam(value = "recordSnapshotContextUri") String recordSnapshotContextUri) {
 
-        return recordService.findByRemoteContextUri(projectName, recordSnapshotContextUri)
-                .map(record -> mapRecord(record))
+        return recordService.findRecordSnapshotByRemoteContext(projectName, recordSnapshotContextUri)
+                .map(recordSnapshot -> mapRecord(recordSnapshot))
                 .orElseThrow(() -> new RecordSnapshotNotFound("RecordSnapshot not found."));
     }
 
