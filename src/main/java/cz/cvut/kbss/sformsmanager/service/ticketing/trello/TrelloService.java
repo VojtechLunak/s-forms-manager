@@ -113,6 +113,28 @@ public class TrelloService implements TicketingService {
         }
     }
 
+    @Override
+    public void moveAllTicketsToDeployed() {
+        List<TList> boardLists = trelloClient.getBoardLists(boardId);
+        if (boardLists.isEmpty()) {
+            throw new TrelloException("Trello board does not have any lists!");
+        }
+
+        List<Card> boardCards = trelloClient.getBoardCards(boardId);
+        if (boardCards.isEmpty()) {
+            throw new TrelloException("Trello board does not have any cards!");
+        }
+
+        TList deployedList = boardLists.stream()
+                .filter(list -> list.getName().equals("DEPLOYED"))
+                .findAny()
+                .orElseThrow(() -> new TrelloException("Trello list 'DEPLOYED' not found."));
+
+        boardCards.forEach(boardCard -> {
+            trelloClient.moveCardToList(boardCard.getId(), deployedList.getId());
+        });
+    }
+
     private Label getProjectLabel(String projectName) {
         List<Label> existingLabels = trelloClient.getBoardLabels(boardId);
         return existingLabels.stream()
