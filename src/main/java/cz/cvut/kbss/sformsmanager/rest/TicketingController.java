@@ -86,6 +86,19 @@ public class TicketingController {
         return ResponseEntity.ok().build();
     }
 
+    @RequestMapping(method = RequestMethod.GET, path = "/resolveAll")
+    public ResponseEntity<String> resolveAllIssuesAndOpenAllRecords(@RequestParam(value = "projectName") String projectName) {
+        Project project = projectService.findByKey(projectName).orElseThrow();
+        remoteFormGenJsonLoader.changeRecordPhaseForAllRecords(RecordPhase.OPEN, project.getAppRepositoryUrl());
+        try {
+            ticketingService.moveAllTicketsToDeployed();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+
+        return ResponseEntity.ok().build();
+    }
+
     @RequestMapping(method = RequestMethod.POST)
     @ResponseStatus(value = HttpStatus.OK)
     public String create(@RequestBody CreateTicketRequest createTicketRequest) {
