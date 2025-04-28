@@ -138,10 +138,6 @@ public class FormTemplateExtractionService {
                 .orElseThrow(() -> new IllegalArgumentException("No node with @type 'form-template' found"));
         formTemplateNode.put("@id", graphUri);
 
-        Map<String, Object> questionOriginNode = new HashMap<>();
-        questionOriginNode.put("@id", graphUri + "-qo");
-        formTemplateNode.put("http://onto.fel.cvut.cz/ontologies/form/has-question-origin", questionOriginNode);
-
         // Build the result
         Map<String, Object> result = Map.of(
                 "@id", formTemplateNode.get("@id"),
