@@ -11,6 +11,7 @@ import java.util.*;
 
 @Service
 public class FormTemplateExtractionService {
+    private static final String BASE_URI = "http://example.com/base/";
 
     public FormTemplateExtractionService() {
     }
@@ -42,15 +43,36 @@ public class FormTemplateExtractionService {
         Map<String, Object> idToOriginMap = new HashMap<>();
         for (Map<String, Object> node : filteredGraph) {
             Object id = node.get("@id");
+
             Object origin = node.get("has-question-origin");
+            if (id != null && origin == null) {
+                List<String> types = getAsList(node.get("@type"));
+                if (types.contains("doc:question")) {
+                    String idStr = id.toString();
+                    String originStr = Optional.ofNullable(node.get("has-question-origin"))
+                            .map(Object::toString)
+                            .orElse(null);
+
+                    if (originStr == null || originStr.isBlank()) {
+                        originStr = idStr + "-qo-" +  + System.currentTimeMillis() % 10000 + new Random().nextInt(5000);
+                    } else if (originStr.endsWith("-qo")) {
+                        originStr = originStr + "-" + System.currentTimeMillis() % 10000 + new Random().nextInt(5000);
+                    }
+
+                    idToOriginMap.put(idStr, getDefaultFullUriForString(idStr));
+                    node.put("@id", getDefaultFullUriForString(idStr));
+                    node.put("has-question-origin", getDefaultFullUriForString(originStr)); // Ensure it's written back
+                }
+            }
             if (id != null && origin != null) {
                 String originStr = origin.toString();
                 String adjustedOrigin = originStr.replaceAll("-qo$", "");
                 if (originStr.equals(adjustedOrigin)) {
                     adjustedOrigin = originStr + "-" + System.currentTimeMillis() % 10000 + new Random().nextInt(5000);
                 }
-                idToOriginMap.put(id.toString(), adjustedOrigin);
+                idToOriginMap.put(id.toString(), getDefaultFullUriForString(adjustedOrigin));
             }
+
         }
 
         // Step 3: Recursively update all references to use origin
@@ -60,9 +82,15 @@ public class FormTemplateExtractionService {
             if (updatedNodeObj instanceof Map<?, ?> updatedNodeMap) {
                 Map<String, Object> updatedNode = new LinkedHashMap<>();
                 updatedNodeMap.forEach((key, value) -> updatedNode.put(key.toString(), value));
+                updatedNode.put("@id", getDefaultFullUriForString(updatedNode.get("@id").toString()));
                 if (updatedNode.get("has-question-origin") != null) {
                     String origin = updatedNode.get("has-question-origin").toString();
                     updatedNode.put("@id", idToOriginMap.getOrDefault(origin, updatedNode.get("@id")));
+                }
+                if (updatedNode.get("has_related_question") != null) {
+                    List<String> relatedQuestions = getAsList(updatedNode.get("has_related_question"));
+                    relatedQuestions = relatedQuestions.stream().map(this::getDefaultFullUriForString).toList();
+                    updatedNode.put("has_related_question", relatedQuestions);
                 }
                 updatedGraph.add(updatedNode);
             }
@@ -146,4 +174,12 @@ public class FormTemplateExtractionService {
 
         return result;
     }
+
+    private String getDefaultFullUriForString(String field) {
+        if (!field.startsWith("http://") && !field.startsWith("https://")) {
+            return BASE_URI + field;
+        }
+        return field;
+    }
+
 }
