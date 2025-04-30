@@ -16,10 +16,10 @@ import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 
 @Service
 public class RemoteFormGenJsonLoader implements FormGenJsonLoader {
@@ -241,8 +241,21 @@ public class RemoteFormGenJsonLoader implements FormGenJsonLoader {
             JsonNode root = mapper.readTree(response.getBody());
             JsonNode bindings = root.get("results").get("bindings").get(0);
 
-            if (bindings.has("created")) resultMap.put("Created", bindings.get("created").get("value").asText());
-            if (bindings.has("modified")) resultMap.put("Modified", bindings.get("modified").get("value").asText());
+            // Parse and format the "created" value
+            if (bindings.has("created")) {
+                String createdRaw = bindings.get("created").get("value").asText();
+                ZonedDateTime createdDateTime = ZonedDateTime.parse(createdRaw).withZoneSameInstant(ZoneId.systemDefault());
+                String formattedCreated = createdDateTime.format(DateTimeFormatter.ofPattern("dd.MM.yyyy, HH:mm:ss z", Locale.getDefault()));
+                resultMap.put("Created", formattedCreated);
+            }
+
+            // Parse and format the "modified" value
+            if (bindings.has("modified")) {
+                String modifiedRaw = bindings.get("modified").get("value").asText();
+                ZonedDateTime modifiedDateTime = ZonedDateTime.parse(modifiedRaw).withZoneSameInstant(ZoneId.systemDefault());
+                String formattedModified = modifiedDateTime.format(DateTimeFormatter.ofPattern("dd.MM.yyyy, HH:mm:ss z", Locale.getDefault()));
+                resultMap.put("Modified", formattedModified);
+            }
             if (bindings.has("phase")) resultMap.put("Phase", bindings.get("phase").get("value").asText());
             if (bindings.has("rejectReason")) resultMap.put("RejectReason", bindings.get("rejectReason").get("value").asText());
 

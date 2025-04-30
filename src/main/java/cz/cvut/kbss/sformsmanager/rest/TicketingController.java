@@ -131,7 +131,7 @@ public class TicketingController {
         // get the default project
         Project project = projectService.findAll().get(0);
 
-        // create virtual formGen from updated record
+        // create virtual formGen from updated record in case of REJECT or COMPLETE
         remoteFormGenJsonLoader.generateVirtualFormGen(record, formGenURI, project.getAppRepositoryUrl());
 
         // export the virtual formGen record
@@ -145,6 +145,8 @@ public class TicketingController {
 
         Map<String, String> metadata = remoteFormGenJsonLoader.getRecordMetadata(formGenURI, record, project.getFormGenRepositoryUrl());
         String phase = metadata.get("Phase");
+        // we do not need phase in description
+        metadata.remove("Phase");
         if (phase == null || !phase.equals(RecordPhase.REJECTED.toString())) {
             return "No ticket created. Record phase is not 'rejected'.";
         }
