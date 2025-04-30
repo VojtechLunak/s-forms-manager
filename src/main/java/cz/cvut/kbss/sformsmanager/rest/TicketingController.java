@@ -123,7 +123,6 @@ public class TicketingController {
     public String onRecordUpdate(@RequestParam String record) throws URISyntaxException, IOException {
         CreateTicketRequest createTicketRequest = new CreateTicketRequest();
         String recordKey = record.split("/")[record.split("/").length - 1];
-        createTicketRequest.setName("Record updated - " + recordKey);
 
         String timestamp = String.valueOf(System.currentTimeMillis());
         String formGenURI = "http://onto.fel.cvut.cz/ontologies/record-manager/formGenVirtual" + timestamp;
@@ -145,8 +144,11 @@ public class TicketingController {
 
         Map<String, String> metadata = remoteFormGenJsonLoader.getRecordMetadata(formGenURI, record, project.getFormGenRepositoryUrl());
         String phase = metadata.get("Phase");
+        String label = metadata.get("Label");
+        createTicketRequest.setName("Record issue: " + label);
         // we do not need phase in description
         metadata.remove("Phase");
+        metadata.remove("Label");
         if (phase == null || !phase.equals(RecordPhase.REJECTED.toString())) {
             return "No ticket created. Record phase is not 'rejected'.";
         }
