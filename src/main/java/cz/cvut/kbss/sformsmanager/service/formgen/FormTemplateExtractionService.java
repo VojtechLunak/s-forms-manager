@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.*;
 
 
@@ -165,6 +166,8 @@ public class FormTemplateExtractionService {
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("No node with @type 'form-template' found"));
         formTemplateNode.put("@id", graphUri);
+        String timestampUri = Instant.now().toString();;
+        formTemplateNode.put("http://purl.org/dc/terms/created", timestampUri);
 
         // Build the result
         Map<String, Object> result = Map.of(
