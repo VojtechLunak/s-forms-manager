@@ -321,22 +321,29 @@ public class RemoteFormGenJsonLoader implements FormGenJsonLoader {
     public void changeRecordPhaseForAllRecords(RecordPhase recordPhase, String appRepositoryUrl) {
         String changeRecordPhaseSparql = String.format("""
                 PREFIX srm: <http://onto.fel.cvut.cz/ontologies/record-manager/>
-                
-                 DELETE {
-                     ?record srm:has-phase ?phase .
-                 }
-                 INSERT {
-                     ?record srm:has-phase <%s> .
-                 }
-                 WHERE {
-                     ?record a srm:patient-record .
-                     VALUES ?phase {
-                       <%s>
-                       <%s>
-                       <%s>
-                     }
-                 }
-                """, recordPhase.toString(), RecordPhase.REJECTED, RecordPhase.OPEN, RecordPhase.COMPLETE);
+
+                DELETE {
+                    GRAPH ?g {
+                        ?record srm:has-phase ?phase .
+                    }
+                }
+                INSERT {
+                    GRAPH ?g {
+                        ?record srm:has-phase <%s> .
+                    }
+                }
+                WHERE {
+                    GRAPH ?g {
+                        ?record a srm:patient-record .
+                        ?record srm:has-phase ?phase .
+                    }
+                    VALUES ?phase {
+                        <%s>
+                        <%s>
+                        <%s>
+                    }
+                }
+            """, recordPhase.toString(), RecordPhase.REJECTED, RecordPhase.OPEN, RecordPhase.COMPLETE);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.valueOf("application/sparql-update"));
