@@ -210,10 +210,11 @@ public class RemoteFormGenJsonLoader implements FormGenJsonLoader {
         PREFIX dcterms: <http://purl.org/dc/terms/>
         PREFIX srm: <http://onto.fel.cvut.cz/ontologies/record-manager/>
 
-        SELECT ?created ?modified ?phase ?rejectReason
+        SELECT ?label ?created ?modified ?phase ?rejectReason
         WHERE {
           GRAPH <%s> {
             BIND (<%s> AS ?record)
+            OPTIONAL { ?record rdfs:label ?label }
             OPTIONAL { ?record dcterms:created ?created }
             OPTIONAL { ?record dcterms:modified ?modified }
             OPTIONAL { ?record srm:has-phase ?phase }
@@ -241,6 +242,11 @@ public class RemoteFormGenJsonLoader implements FormGenJsonLoader {
             JsonNode root = mapper.readTree(response.getBody());
             JsonNode bindings = root.get("results").get("bindings").get(0);
 
+            // Parse and format the "label" value
+            if (bindings.has("label")) {
+                resultMap.put("Label", bindings.get("label").get("value").asText());
+            }
+
             // Parse and format the "created" value
             if (bindings.has("created")) {
                 String createdRaw = bindings.get("created").get("value").asText();
@@ -257,7 +263,7 @@ public class RemoteFormGenJsonLoader implements FormGenJsonLoader {
                 resultMap.put("Modified", formattedModified);
             }
             if (bindings.has("phase")) resultMap.put("Phase", bindings.get("phase").get("value").asText());
-            if (bindings.has("rejectReason")) resultMap.put("RejectReason", bindings.get("rejectReason").get("value").asText());
+            if (bindings.has("rejectReason")) resultMap.put("Reject Reason", "\n"+ bindings.get("rejectReason").get("value").asText());
 
         } catch (Exception e) {
             log.warn("Failed to parse metadata SPARQL result", e);
