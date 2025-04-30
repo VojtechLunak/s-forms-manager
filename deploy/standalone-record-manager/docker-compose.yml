@@ -130,6 +130,10 @@ services:
       - rdf4j-server
     environment:
       RDF4J_REPOSITORY_URL: "http://rdf4j-server:8080/rdf4j-server/repositories/s-forms-manager"
+      DEFAULT_PROJECT_NAME: "clinical-studies"
+      APP_REPOSITORY_URL: "http://db-server:7200/repositories/record-manager-app"
+      FORMGEN_REPOSITORY_URL: "http://db-server:7200/repositories/record-manager-formgen"
+      SPIPES_SERVICE_URL: "${FORMGEN_SERVICE_URL}"
 
   rdf4j-server:
     build:
