@@ -11,6 +11,8 @@ public class TicketDTO implements Ticket {
 
     private final String url;
 
+    private String memberEmail;
+
     private final TicketToProjectRelations projectRelations;
 
     public TicketDTO(String name, String description, String url, TicketToProjectRelations projectRelations) {
@@ -18,6 +20,15 @@ public class TicketDTO implements Ticket {
         this.description = description;
         this.url = url;
         this.projectRelations = projectRelations;
+    }
+
+    public TicketDTO(String name, String description, String url, TicketToProjectRelations projectRelations, String memberEmail) {
+        this(name, description, url, projectRelations);
+        this.memberEmail = memberEmail;
+    }
+
+    public String getMemberEmail() {
+        return memberEmail;
     }
 
     public String getName() {
