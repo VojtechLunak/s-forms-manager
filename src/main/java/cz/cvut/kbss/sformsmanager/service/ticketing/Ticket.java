@@ -8,6 +8,8 @@ public interface Ticket {
 
     String getUrl();
 
+    String getMemberEmail();
+
     TicketToProjectRelations getTicketCustomRelations();
 
 }

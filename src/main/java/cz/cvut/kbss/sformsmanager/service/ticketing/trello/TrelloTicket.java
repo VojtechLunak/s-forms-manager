@@ -11,6 +11,8 @@ public class TrelloTicket implements Ticket {
 
     private final String url;
 
+    private String memberEmail;
+
     private final TrelloCustomFields customFields;
 
     public TrelloTicket(String name, String description, String url, TrelloCustomFields customFields) {
@@ -18,6 +20,11 @@ public class TrelloTicket implements Ticket {
         this.description = description;
         this.url = url;
         this.customFields = customFields;
+    }
+
+    public TrelloTicket(String name, String description, String url, TrelloCustomFields customFields, String memberEmail) {
+        this(name, description, url, customFields);
+        this.memberEmail = memberEmail;
     }
 
     @Override
@@ -33,6 +40,11 @@ public class TrelloTicket implements Ticket {
     @Override
     public String getUrl() {
         return url;
+    }
+
+    @Override
+    public String getMemberEmail() {
+        return memberEmail;
     }
 
     @Override

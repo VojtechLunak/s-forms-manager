@@ -145,10 +145,12 @@ public class TicketingController {
         Map<String, String> metadata = remoteFormGenJsonLoader.getRecordMetadata(formGenURI, record, project.getFormGenRepositoryUrl());
         String phase = metadata.get("Phase");
         String label = metadata.get("Label");
+        String authorEmail = metadata.get("Email");
         createTicketRequest.setName("Record issue: " + label);
         // we do not need phase in description
         metadata.remove("Phase");
         metadata.remove("Label");
+        metadata.remove("email");
         if (phase == null || !phase.equals(RecordPhase.REJECTED.toString())) {
             return "No ticket created. Record phase is not 'rejected'.";
         }
@@ -183,7 +185,7 @@ public class TicketingController {
         // create ticket relations
         TicketToProjectRelations relations = ticketToProjectRelationsService.createRelationsFromRequest(createTicketRequest);
 
-        TicketDTO ticket = new TicketDTO(createTicketRequest.getName(), createTicketRequest.getDescription(), null, relations);
+        TicketDTO ticket = new TicketDTO(createTicketRequest.getName(), createTicketRequest.getDescription(), null, relations, authorEmail);
         return ticketingService.createTicket(createTicketRequest.getProjectName(), ticket);
     }
 
