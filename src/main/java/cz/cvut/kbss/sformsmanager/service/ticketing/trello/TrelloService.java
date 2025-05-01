@@ -2,6 +2,7 @@ package cz.cvut.kbss.sformsmanager.service.ticketing.trello;
 
 import com.julienvey.trello.domain.Card;
 import com.julienvey.trello.domain.Label;
+import com.julienvey.trello.domain.Member;
 import com.julienvey.trello.domain.TList;
 import cz.cvut.kbss.sformsmanager.exception.TrelloException;
 import cz.cvut.kbss.sformsmanager.service.ticketing.Ticket;
@@ -59,6 +60,12 @@ public class TrelloService implements TicketingService {
         Card card = new Card();
         card.setName(ticket.getName());
         card.setDesc(ticket.getDescription());
+
+        // assign the member to the card if email is provided
+        if (ticket.getMemberEmail() != null && !ticket.getMemberEmail().isEmpty()) {
+            Member member = getTrelloMemberByEmail(ticket.getMemberEmail());
+            card.setIdMembers(List.of(member.getId()));
+        }
 
         // create ticket
         card = trelloClient.createCard(getNewCardListId(), card);
@@ -125,14 +132,42 @@ public class TrelloService implements TicketingService {
             throw new TrelloException("Trello board does not have any cards!");
         }
 
+        List<String> listIds = boardLists.stream()
+                .filter(list -> list.getName().equals("OPEN") || list.getName().equals("TODO") || list.getName().equals("IN PROGRESS"))
+                .map(TList::getId)
+                .collect(Collectors.toList());
+
         TList deployedList = boardLists.stream()
                 .filter(list -> list.getName().equals("DEPLOYED"))
                 .findAny()
                 .orElseThrow(() -> new TrelloException("Trello list 'DEPLOYED' not found."));
 
         boardCards.forEach(boardCard -> {
-            trelloClient.moveCardToList(boardCard.getId(), deployedList.getId());
+            if (!listIds.contains(boardCard.getIdList())) {
+                trelloClient.moveCardToList(boardCard.getId(), deployedList.getId());
+            }
         });
+    }
+
+    private Member getTrelloMemberByEmail(String email) {
+        List<Member> members = trelloClient.getBoardMembers(boardId);
+        if (members.isEmpty()) {
+            throw new TrelloException("Trello board does not have any members!");
+        }
+
+        return members.stream()
+                .map(m -> trelloClient.getMemberInformation(m.getUsername()))
+                .filter(m -> {
+                    // logic to work with the fact that Trello API might not return the email - for email test.domain456@email.com, username testdomain456 is valid
+                    if (m.getEmail() == null) {
+                        return m.getUsername().contains(email.substring(0, email.indexOf("@")).replace("[^a-zA-Z0-9]",""));
+                    } else {
+                        return m.getEmail().equals(email);
+                    }
+
+                })
+                .findAny()
+                .orElseThrow(() -> new TrelloException("Trello member with email: " + email + " not found."));
     }
 
     private Label getProjectLabel(String projectName) {
