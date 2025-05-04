@@ -169,6 +169,34 @@ public class FormTemplateExtractionService {
         String timestampUri = Instant.now().toString();;
         formTemplateNode.put("http://purl.org/dc/terms/created", timestampUri);
 
+        // automatic versioning
+        List<LinkedHashMap> hasVersionValue =  (List<LinkedHashMap>) formTemplateNode.get("http://purl.org/dc/terms/hasVersion");
+        if (!hasVersionValue.isEmpty()) {
+            String version = hasVersionValue.get(0).get("@id").toString();
+            if (version != null) {
+                if (version != null && version.contains("/")) {
+                    String[] uriParts = version.split("/");
+                    String versionStr = uriParts[uriParts.length - 1];
+                    String[] versionParts = versionStr.split("\\.");
+                    if (versionParts.length == 3) {
+                        int patchNumber = Integer.parseInt(versionParts[2]);
+                        versionParts[2] = String.valueOf(patchNumber + 1);
+                        String updatedVersion = version.substring(0, version.lastIndexOf('/') + 1) + String.join(".", versionParts);
+                        List<Object> arrayList = new ArrayList<>();
+                        Map<String, Object> versionNode = new HashMap<>();
+                        arrayList.add(versionNode);
+                        versionNode.put("@id", updatedVersion); // Set the @id to the updated version
+                        formTemplateNode.put("http://purl.org/dc/terms/hasVersion", arrayList);
+                    }
+                }
+            } else {
+                throw new IllegalArgumentException("Unexpected type in version list: " + version.getClass());
+            }
+        } else {
+            throw new IllegalArgumentException("Invalid or empty hasVersion value");
+        }
+
+
         // Build the result
         Map<String, Object> result = Map.of(
                 "@id", formTemplateNode.get("@id"),
