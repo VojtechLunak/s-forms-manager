@@ -77,10 +77,7 @@ public class SFormsController {
         String baseGraphDbUrl = project.getFormGenRepositoryUrl() + "/statements";
 
         try {
-            String graphUri = "<http://onto.fel.cvut.cz/ontologies/templates/" + contextUri + ">";
-            String finalUrl = baseGraphDbUrl + "?context=" + graphUri;
-
-            String formTemplateJsonLdString = formTemplateExtractionService.extractFormTemplateFromFormData(jsonLdData, "http://onto.fel.cvut.cz/ontologies/templates/" + contextUri);
+            String formTemplateJsonLdString = formTemplateExtractionService.extractFormTemplateFromFormData(jsonLdData, project.getFormGenRepositoryUrl());
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.parseMediaType("application/ld+json"));
@@ -95,7 +92,7 @@ public class SFormsController {
                     String.class
             );
 
-            return ResponseEntity.status(HttpStatus.OK).body("Form template uploaded successfully to: " + project.getFormGenRepositoryUrl() + " at " + graphUri);
+            return ResponseEntity.status(HttpStatus.OK).body("New form template version uploaded successfully to: " + project.getFormGenRepositoryUrl());
         } catch (Exception e) {
             log.error("Failed to upload form template to GraphDB", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error uploading form template to GraphDB.");

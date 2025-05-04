@@ -14,10 +14,13 @@ import java.util.*;
 public class FormTemplateExtractionService {
     private static final String BASE_URI = "http://example.com/base/";
 
-    public FormTemplateExtractionService() {
+    private final RemoteFormGenJsonLoader remoteFormGenJsonLoader;
+
+    public FormTemplateExtractionService(RemoteFormGenJsonLoader remoteFormGenJsonLoader) {
+        this.remoteFormGenJsonLoader = remoteFormGenJsonLoader;
     }
 
-    public String extractFormTemplateFromFormData(String jsonLdInput, String graphUri) throws IOException {
+    public String extractFormTemplateFromFormData(String jsonLdInput, String repositoryUrl) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
         Map<String, Object> fullJsonld = mapper.readValue(jsonLdInput, new TypeReference<>() {});
         List<Map<String, Object>> graph = (List<Map<String, Object>>) fullJsonld.get("@graph");
@@ -101,7 +104,7 @@ public class FormTemplateExtractionService {
         Map<String, Object> result = new HashMap<>();
         result.put("@context", fullJsonld.get("@context"));
         result.put("@graph", updatedGraph);
-        return mapper.writeValueAsString(flattenJsonLdStructure(result, graphUri));
+        return mapper.writeValueAsString(flattenJsonLdStructure(result, repositoryUrl));
     }
 
     private Object updateIdsRecursively(Object node, Map<String, Object> idToOriginMap) {
@@ -145,7 +148,7 @@ public class FormTemplateExtractionService {
         return Collections.emptyList();
     }
 
-    private Map<String, Object> flattenJsonLdStructure(Map<String, Object> inputJsonLd, String graphUri) {
+    private Map<String, Object> flattenJsonLdStructure(Map<String, Object> inputJsonLd, String repositoryUrl) {
         // Expand the JSON-LD structure using the @context
         Object expanded = JsonLdProcessor.expand(inputJsonLd);
 
@@ -165,7 +168,6 @@ public class FormTemplateExtractionService {
                 })
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("No node with @type 'form-template' found"));
-        formTemplateNode.put("@id", graphUri);
         String timestampUri = Instant.now().toString();;
         formTemplateNode.put("http://purl.org/dc/terms/created", timestampUri);
 
@@ -174,7 +176,6 @@ public class FormTemplateExtractionService {
         if (!hasVersionValue.isEmpty()) {
             String version = hasVersionValue.get(0).get("@id").toString();
             if (version != null) {
-                if (version != null && version.contains("/")) {
                     String[] uriParts = version.split("/");
                     String versionStr = uriParts[uriParts.length - 1];
                     String[] versionParts = versionStr.split("\\.");
@@ -185,12 +186,16 @@ public class FormTemplateExtractionService {
                         List<Object> arrayList = new ArrayList<>();
                         Map<String, Object> versionNode = new HashMap<>();
                         arrayList.add(versionNode);
-                        versionNode.put("@id", updatedVersion); // Set the @id to the updated version
+                        String baseUri = updatedVersion.substring(0, updatedVersion.lastIndexOf('/')); // Remove the last part after '/'
+                        versionNode.put("@id", baseUri); // Set the @id to the base URI
+                        String obsoleteVersionDefiniton = remoteFormGenJsonLoader.exportGraph(baseUri, repositoryUrl);
+                        remoteFormGenJsonLoader.deleteGraph(baseUri, repositoryUrl);
+                        remoteFormGenJsonLoader.importGraph(version, repositoryUrl, obsoleteVersionDefiniton);
                         formTemplateNode.put("http://purl.org/dc/terms/hasVersion", arrayList);
+                        formTemplateNode.put("@id", version.substring(0, version.lastIndexOf('/')));
                     }
-                }
             } else {
-                throw new IllegalArgumentException("Unexpected type in version list: " + version.getClass());
+                throw new IllegalArgumentException("Unexpected type in version list");
             }
         } else {
             throw new IllegalArgumentException("Invalid or empty hasVersion value");
