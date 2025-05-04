@@ -1,9 +1,13 @@
-SELECT ?recordCreateDate ?recordModifiedDate ?remoteRecordURI ?rootQuestionOrigin
+SELECT ?recordCreateDate ?recordModifiedDate ?remoteRecordURI ?rootQuestionOrigin ?formTemplateVersion
 WHERE
 {
     graph ?contextUri {
         ?s a <http://onto.fel.cvut.cz/ontologies/record-manager/patient-record> .
         ?s <http://purl.org/dc/terms/created> ?recordCreateDate .
+        ?s	<http://onto.fel.cvut.cz/ontologies/record-manager/has-form-template> ?formTemplate .
+        OPTIONAL {
+            ?s <http://onto.fel.cvut.cz/ontologies/record-manager/has-form-template-version> ?formTemplateVersion .
+        }
         OPTIONAL {
             ?s <http://purl.org/dc/terms/modified> ?recordModifiedDateOptional .
         }
