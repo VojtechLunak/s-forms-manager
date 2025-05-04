@@ -120,7 +120,7 @@ public class RecordSnapshotController {
         formGenURI = "http://onto.fel.cvut.cz/ontologies/record-manager/" + formGenURI;
         RecordPhase recordPhase = RecordPhase.valueOf(phase.toUpperCase());
         Project project = projectService.findByKey(projectName).orElseThrow();
-        remoteFormGenJsonLoader.changeRecordPhaseForFormGen(formGenURI, recordPhase, project.getFormGenRepositoryUrl(), project.getAppRepositoryUrl());
+        remoteFormGenJsonLoader.changeRecordPhaseForFormGenSPARQL(formGenURI, recordPhase, project.getFormGenRepositoryUrl(), project.getAppRepositoryUrl());
     }
 
     private RecordSnapshotDTO mapRecord(RecordSnapshot recordSnapshot) { // TODO: struts https://mapstruct.org/
