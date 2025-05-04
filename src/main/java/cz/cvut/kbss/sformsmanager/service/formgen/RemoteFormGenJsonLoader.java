@@ -10,6 +10,7 @@ import cz.cvut.kbss.sformsmanager.utils.RecordPhase;
 import org.eclipse.rdf4j.repository.Repository;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -33,6 +34,9 @@ public class RemoteFormGenJsonLoader implements FormGenJsonLoader {
     private static final String REPOSITORY_URL_PARAM = "repositoryUrl";
     private static final String FORMGEN_REPOSITORY_URL_PARAM = "formGenRepositoryUrl";
     private static final String RECORD_GRAPH_ID_PARAM = "recordGraphId";
+
+    @Value("${RM_BACKEND_API_URL:}")
+    private String RECORD_MANAGER_API_URL;
 
     @Autowired
     public RemoteFormGenJsonLoader(RemoteDataLoader dataLoader, ProjectDAO projectDAO, Repository repository) {
@@ -209,15 +213,18 @@ public class RemoteFormGenJsonLoader implements FormGenJsonLoader {
         String sparql = String.format("""
         PREFIX dcterms: <http://purl.org/dc/terms/>
         PREFIX srm: <http://onto.fel.cvut.cz/ontologies/record-manager/>
-
-        SELECT ?label ?created ?modified ?phase ?rejectReason
+        PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+        
+        SELECT ?label ?created ?modified ?phase ?rejectReason ?authorEmail
         WHERE {
           GRAPH <%s> {
             BIND (<%s> AS ?record)
-            OPTIONAL { ?record rdfs:label ?label }
-            OPTIONAL { ?record dcterms:created ?created }
+            ?record <http://onto.fel.cvut.cz/ontologies/record-manager/has-author> ?author .
+            ?author foaf:mbox ?authorEmail .
+            ?record rdfs:label ?label .
+            ?record dcterms:created ?created .
             OPTIONAL { ?record dcterms:modified ?modified }
-            OPTIONAL { ?record srm:has-phase ?phase }
+            ?record srm:has-phase ?phase .
             OPTIONAL { ?record srm:reject-reason ?rejectReason }
           }
         }
@@ -264,6 +271,7 @@ public class RemoteFormGenJsonLoader implements FormGenJsonLoader {
             }
             if (bindings.has("phase")) resultMap.put("Phase", bindings.get("phase").get("value").asText());
             if (bindings.has("rejectReason")) resultMap.put("Reject Reason", "\n"+ bindings.get("rejectReason").get("value").asText());
+            if (bindings.has("authorEmail")) resultMap.put("Email", bindings.get("authorEmail").get("value").asText());
 
         } catch (Exception e) {
             log.warn("Failed to parse metadata SPARQL result", e);
@@ -272,7 +280,7 @@ public class RemoteFormGenJsonLoader implements FormGenJsonLoader {
         return resultMap;
     }
 
-    public void changeRecordPhaseForFormGen(String formGen, RecordPhase recordPhase, String formGenRepoUrl, String appRepoUrl) {
+    public void changeRecordPhaseForFormGenSPARQL(String formGen, RecordPhase recordPhase, String formGenRepoUrl, String appRepoUrl) {
         String getRecordSparql = String.format("""
                 PREFIX srm: <http://onto.fel.cvut.cz/ontologies/record-manager/>
                 
@@ -335,9 +343,14 @@ public class RemoteFormGenJsonLoader implements FormGenJsonLoader {
                 sparqlRequest2,
                 String.class
         );
+
+        // refresh the original record - workaround for cache settings of JOPA regarding PersistenceContext in RM
+        String exportedRecord = this.exportGraph(recordIRISparql, appRepoUrl);
+        this.deleteGraph(recordIRISparql, appRepoUrl);
+        this.importGraph(recordIRISparql, appRepoUrl, exportedRecord);
     }
 
-    public void changeRecordPhaseForAllRecords(RecordPhase recordPhase, String appRepositoryUrl) {
+    public void changeRecordPhaseForAllRecordsSPARQL(RecordPhase recordPhase, String appRepositoryUrl) {
         String changeRecordPhaseSparql = String.format("""
                 PREFIX srm: <http://onto.fel.cvut.cz/ontologies/record-manager/>
 
@@ -373,6 +386,57 @@ public class RemoteFormGenJsonLoader implements FormGenJsonLoader {
                 appRepositoryUrl + "/statements",
                 HttpMethod.POST,
                 sparqlRequest,
+                String.class
+        );
+    }
+
+    public void changeRecordPhaseForAllRecords(RecordPhase recordPhase) {
+        RestTemplate restTemplate = new RestTemplate();
+        restTemplate.exchange(
+                RECORD_MANAGER_API_URL + "/rest/external/open/all",
+                HttpMethod.GET,
+                null,
+                String.class
+        );
+    }
+
+    public void changeRecordPhaseForFormGen(String formGenUri, RecordPhase recordPhase, String formGenRepoUrl) {
+        String getRecordSparql = String.format("""
+                PREFIX srm: <http://onto.fel.cvut.cz/ontologies/record-manager/>
+                
+                SELECT ?record
+                WHERE {
+                  GRAPH <%s> {
+                    ?record a srm:patient-record .
+                  }
+                }
+                """, formGenUri);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.valueOf("application/sparql-query"));
+        HttpEntity<String> sparqlRequest = new HttpEntity<>(getRecordSparql, headers);
+        RestTemplate restTemplate = new RestTemplate();
+        ResponseEntity<String> response = restTemplate.exchange(
+                formGenRepoUrl,
+                HttpMethod.POST,
+                sparqlRequest,
+                String.class
+        );
+
+        String recordIRISparql = "";
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode root = mapper.readTree(response.getBody());
+            JsonNode bindings = root.get("results").get("bindings").get(0);
+            if (bindings.has("record")) recordIRISparql = bindings.get("record").get("value").asText();
+        } catch (Exception e) {
+            log.warn("Failed to parse metadata SPARQL result", e);
+        }
+
+        restTemplate.exchange(
+                RECORD_MANAGER_API_URL + "/rest/external/open/" + recordIRISparql.substring(recordIRISparql.lastIndexOf("/") + 1),
+                HttpMethod.GET,
+                null,
                 String.class
         );
     }

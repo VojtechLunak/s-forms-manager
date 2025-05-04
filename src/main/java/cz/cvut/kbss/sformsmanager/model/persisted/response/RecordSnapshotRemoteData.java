@@ -21,6 +21,7 @@ public class RecordSnapshotRemoteData {
     private Date recordModifiedDate; // record snapshot saved
     private URI remoteRecordURI; // context URI of the remote formGen
     private String rootQuestionOrigin; // is empty for the initial records
+    private String formTemplateVersion; // version of the form template used for the record
 
     public RecordSnapshotRemoteData() {
     }
@@ -30,6 +31,14 @@ public class RecordSnapshotRemoteData {
         this.recordModifiedDate = recordModifiedDate;
         this.remoteRecordURI = remoteRecordURI;
         this.rootQuestionOrigin = rootQuestionOrigin;
+    }
+
+    public String getFormTemplateVersion() {
+        return formTemplateVersion;
+    }
+
+    public void setFormTemplateVersion(String formTemplateVersion) {
+        this.formTemplateVersion = formTemplateVersion;
     }
 
     public Date getRecordCreateDate() {

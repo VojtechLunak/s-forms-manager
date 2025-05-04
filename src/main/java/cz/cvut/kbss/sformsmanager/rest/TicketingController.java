@@ -76,7 +76,8 @@ public class TicketingController {
     @RequestMapping(method = RequestMethod.GET, path = "/resolve")
     public ResponseEntity<String> resolveIssueAndOpenRecord(@RequestParam(value = "ticketId") String ticketId, @RequestParam(value = "formGenUri") String formGenUri, @RequestParam(value = "projectName") String projectName) {
         Project project = projectService.findByKey(projectName).orElseThrow();
-        remoteFormGenJsonLoader.changeRecordPhaseForFormGen(formGenUri, RecordPhase.OPEN, project.getFormGenRepositoryUrl(), project.getAppRepositoryUrl());
+        //remoteFormGenJsonLoader.changeRecordPhaseForFormGenSPARQL(formGenUri, RecordPhase.OPEN, project.getFormGenRepositoryUrl(), project.getAppRepositoryUrl());
+        remoteFormGenJsonLoader.changeRecordPhaseForFormGen(formGenUri, RecordPhase.OPEN, project.getFormGenRepositoryUrl());
         try {
             ticketingService.moveTicketToDeployed(ticketId);
         } catch (Exception e) {
@@ -89,7 +90,8 @@ public class TicketingController {
     @RequestMapping(method = RequestMethod.GET, path = "/resolveAll")
     public ResponseEntity<String> resolveAllIssuesAndOpenAllRecords(@RequestParam(value = "projectName") String projectName) {
         Project project = projectService.findByKey(projectName).orElseThrow();
-        remoteFormGenJsonLoader.changeRecordPhaseForAllRecords(RecordPhase.OPEN, project.getAppRepositoryUrl());
+        //remoteFormGenJsonLoader.changeRecordPhaseForAllRecordsSPARQL(RecordPhase.OPEN, project.getAppRepositoryUrl());
+        remoteFormGenJsonLoader.changeRecordPhaseForAllRecords(RecordPhase.OPEN);
         try {
             ticketingService.moveAllTicketsToDeployed();
         } catch (Exception e) {

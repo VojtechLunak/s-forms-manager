@@ -67,6 +67,7 @@ public class Vocabulary {
     public static final String p_hasFormTemplate = URI_BASE + "hasFormTemplate";
     public static final String p_hasFormTemplateSnapshots = URI_BASE + "hasFormTemplateSnapshots";
     public static final String p_hasFormTemplateVersion = URI_BASE + "hasFormTemplateVersion";
+    public static final String p_hasFormTemplateVersionRecordManager = URI_BASE + "hasFormTemplateVersionRecordManager";
     public static final String p_hasFormTemplateVersions = URI_BASE + "hasFormTemplateVersions";
     public static final String p_hasRecordSnapshots = URI_BASE + "hasRecordSnapshots";
     public static final String p_hasRecordSnapshot = URI_BASE + "hasRecordSnapshot";
