@@ -13,7 +13,8 @@ import java.util.Date;
                         @VariableResult(name = "recordCreateDate", type = Date.class),
                         @VariableResult(name = "recordModifiedDate", type = Date.class),
                         @VariableResult(name = "remoteRecordURI", type = URI.class),
-                        @VariableResult(name = "rootQuestionOrigin", type = String.class)
+                        @VariableResult(name = "rootQuestionOrigin", type = String.class),
+                        @VariableResult(name= "formTemplateVersion", type = String.class)
                 })
         })
 public class RecordSnapshotRemoteData {
