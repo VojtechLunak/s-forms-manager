@@ -27,11 +27,12 @@ public class RecordSnapshotRemoteData {
     public RecordSnapshotRemoteData() {
     }
 
-    public RecordSnapshotRemoteData(Date recordCreateDate, Date recordModifiedDate, URI remoteRecordURI, String rootQuestionOrigin) {
+    public RecordSnapshotRemoteData(Date recordCreateDate, Date recordModifiedDate, URI remoteRecordURI, String rootQuestionOrigin, String formTemplateVersion) {
         this.recordCreateDate = recordCreateDate;
         this.recordModifiedDate = recordModifiedDate;
         this.remoteRecordURI = remoteRecordURI;
         this.rootQuestionOrigin = rootQuestionOrigin;
+        this.formTemplateVersion = formTemplateVersion;
     }
 
     public String getFormTemplateVersion() {
