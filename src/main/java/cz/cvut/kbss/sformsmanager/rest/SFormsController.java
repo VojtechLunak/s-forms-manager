@@ -86,7 +86,7 @@ public class SFormsController {
             HttpEntity<String> request = new HttpEntity<>(formTemplateJsonLdString, headers);
             RestTemplate restTemplate = new RestTemplate();
             ResponseEntity<String> response = restTemplate.exchange(
-                    finalUrl,
+                    baseGraphDbUrl,
                     HttpMethod.POST,
                     request,
                     String.class
