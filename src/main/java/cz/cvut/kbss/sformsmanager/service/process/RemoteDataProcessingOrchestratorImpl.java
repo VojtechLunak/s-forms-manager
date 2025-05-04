@@ -68,6 +68,7 @@ public class RemoteDataProcessingOrchestratorImpl implements RemoteDataProcessin
 
         // LOAD REMOTE DATA: record snapshot
         RecordSnapshotRemoteData recordRemoteData = recordRemoteDAO.getRecordSnapshot(projectName, contextUri);
+        String formTemplateVersionString = recordRemoteData.getFormTemplateVersion();
         String recordSnapshotKey = ObjectUtils.createKeyForContext(projectName, contextUri);
 
         // Record
@@ -128,7 +129,8 @@ public class RemoteDataProcessingOrchestratorImpl implements RemoteDataProcessin
             // add new answers to question template snapshots and update them directly
             addSubmittedAnswersToQuestionsAndPersist(projectName, formTemplateVersion, submittedAnswerMap);
         } else {
-            formTemplateVersion = new FormTemplateVersion(formTemplateVersionKey, formTemplate, null, null, contextUri);
+            formTemplateVersion = new FormTemplateVersion(formTemplateVersionKey, formTemplate, null, null, contextUri, formTemplateVersionString);
+            formTemplateVersion.setInternalName(formTemplateVersionString.substring(formTemplateVersionString.lastIndexOf("/") + 1));
             QuestionTemplateSnapshot questionTemplateSnapshot = createQuestionTemplateSnapshotsWithAnswers(
                     processor.getQuestionOriginsAndTheirPaths(),
                     submittedAnswerMap,
@@ -139,7 +141,6 @@ public class RemoteDataProcessingOrchestratorImpl implements RemoteDataProcessin
             formTemplateVersion.setQuestionTemplateSnapshot(questionTemplateSnapshot);
             formTemplateVersion = formTemplateVersionDAO.update(projectName, formTemplateVersion);
         }
-
 
         // RecordVersion
         String recordVersionKey = ObjectUtils.createKeyForContext(projectName, record.getUri() + "/" + processor.getAllQuestionOriginsAndAnswersString());

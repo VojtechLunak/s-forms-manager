@@ -15,6 +15,10 @@ public class FormTemplateVersion extends LocalEntity implements Serializable {
     private FormTemplate formTemplate;
 
     @ParticipationConstraints(nonEmpty = true)
+    @OWLDataProperty(iri = Vocabulary.p_hasFormTemplateVersionRecordManager)
+    private String formTemplateVersion;
+
+    @ParticipationConstraints(nonEmpty = true)
     @OWLObjectProperty(iri = Vocabulary.p_hasQuestionTemplateSnapshot, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private QuestionTemplateSnapshot questionTemplateSnapshot;
 
@@ -30,12 +34,13 @@ public class FormTemplateVersion extends LocalEntity implements Serializable {
     public FormTemplateVersion() {
     }
 
-    public FormTemplateVersion(String questionOriginsHash, FormTemplate formTemplate, QuestionTemplateSnapshot questionTemplateSnapshot, String internalName, URI sampleRemoteContextURI) {
+    public FormTemplateVersion(String questionOriginsHash, FormTemplate formTemplate, QuestionTemplateSnapshot questionTemplateSnapshot, String internalName, URI sampleRemoteContextURI, String formTemplateVersionRM) {
         super(questionOriginsHash);
         this.formTemplate = formTemplate;
         this.questionTemplateSnapshot = questionTemplateSnapshot;
         this.internalName = internalName;
         this.sampleRemoteContextURI = sampleRemoteContextURI.toString();
+        this.formTemplateVersion = formTemplateVersionRM;
     }
 
     public QuestionTemplateSnapshot getQuestionTemplateSnapshot() {
@@ -68,5 +73,13 @@ public class FormTemplateVersion extends LocalEntity implements Serializable {
 
     public void setSampleRemoteContextURI(URI sampleRemoteContextURI) {
         this.sampleRemoteContextURI = sampleRemoteContextURI.toString();
+    }
+
+    public String getFormTemplateVersion() {
+        return formTemplateVersion;
+    }
+
+    public void setFormTemplateVersion(String formTemplateVersion) {
+        this.formTemplateVersion = formTemplateVersion;
     }
 }
