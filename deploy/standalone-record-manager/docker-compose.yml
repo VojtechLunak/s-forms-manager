@@ -132,7 +132,7 @@ services:
     depends_on:
       - rdf4j-server
     environment:
-      RM_BACKEND_API_URL: "${PUBLIC_ORIGIN:-http://localhost:${INTERNAL_HOST_PORT:-1235}}${APP_ROOT_PATH:-}/services/record-manager-server"
+      RM_BACKEND_API_URL: "http://record-manager-server:8080/record-manager"
       RM_UI_URL: "${PUBLIC_ORIGIN:-http://localhost:${INTERNAL_HOST_PORT:-1235}}${APP_ROOT_PATH:-}/record-manager"
       SFM_UI_URL: "${PUBLIC_ORIGIN:-http://localhost:${INTERNAL_HOST_PORT:-1235}}${APP_ROOT_PATH:-}/s-forms-manager"
       SFM_BACKEND_URL: "${PUBLIC_ORIGIN:-http://localhost:${INTERNAL_HOST_PORT:-1235}}${APP_ROOT_PATH:-}/services/s-forms-manager"
