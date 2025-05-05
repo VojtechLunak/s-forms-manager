@@ -160,7 +160,7 @@ public class TrelloService implements TicketingService {
                 .filter(m -> {
                     // logic to work with the fact that Trello API might not return the email - for email test.domain456@email.com, username testdomain456 is valid
                     if (m.getEmail() == null) {
-                        return m.getUsername().contains(email.substring(0, email.indexOf("@")).replace("[^a-zA-Z0-9]",""));
+                        return m.getUsername().contains(email.substring(0, email.indexOf("@")).replaceAll("[^a-zA-Z0-9]",""));
                     } else {
                         return m.getEmail().equals(email);
                     }
