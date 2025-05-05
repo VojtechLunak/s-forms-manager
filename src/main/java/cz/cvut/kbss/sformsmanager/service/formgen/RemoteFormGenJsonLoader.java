@@ -239,7 +239,7 @@ public class RemoteFormGenJsonLoader implements FormGenJsonLoader {
         PREFIX srm: <http://onto.fel.cvut.cz/ontologies/record-manager/>
         PREFIX foaf: <http://xmlns.com/foaf/0.1/>
         
-        SELECT ?label ?created ?modified ?phase ?rejectReason ?authorEmail
+        SELECT ?label ?created ?modified ?phase ?rejectReason ?authorEmail ?version
         WHERE {
           GRAPH <%s> {
             BIND (<%s> AS ?record)
@@ -250,6 +250,7 @@ public class RemoteFormGenJsonLoader implements FormGenJsonLoader {
             OPTIONAL { ?record dcterms:modified ?modified }
             ?record srm:has-phase ?phase .
             OPTIONAL { ?record srm:reject-reason ?rejectReason }
+            OPTIONAL { ?record srm:has-form-template-version ?version }
           }
         }
         """, formGenUri, recordUri);
@@ -297,6 +298,7 @@ public class RemoteFormGenJsonLoader implements FormGenJsonLoader {
             if (bindings.has("rejectReason")) resultMap.put("Reject Reason", "\n"+ bindings.get("rejectReason").get("value").asText());
             if (bindings.has("authorEmail")) resultMap.put("Email", bindings.get("authorEmail").get("value").asText());
 
+            if (bindings.has("version")) resultMap.put("Version", bindings.get("version").get("value").asText());
         } catch (Exception e) {
             log.warn("Failed to parse metadata SPARQL result", e);
         }
