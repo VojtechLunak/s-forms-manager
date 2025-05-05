@@ -16,7 +16,7 @@ public interface TicketingService {
      * @param ticket
      * @return URL of the ticket
      */
-    String createTicket(String projectName, Ticket ticket);
+    String createTicket(String projectName, Ticket ticket, String version);
 
     TicketToProjectRelations createRelations(String formRelationId, String formVersionRelationId, String questionRelationId);
 
