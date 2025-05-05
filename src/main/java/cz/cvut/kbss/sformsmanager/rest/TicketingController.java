@@ -17,6 +17,7 @@ import cz.cvut.kbss.sformsmanager.service.ticketing.TicketToProjectRelations;
 import cz.cvut.kbss.sformsmanager.service.ticketing.TicketingService;
 import cz.cvut.kbss.sformsmanager.utils.RecordPhase;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
@@ -39,7 +40,20 @@ public class TicketingController {
     private final RemoteFormGenJsonLoader remoteFormGenJsonLoader;
     private final RemoteDataProcessingOrchestrator processingService;
     private final ProjectService projectService;
+    private final ContextService contextService;
     private final QuestionTemplateService questionTemplateService;
+
+    @Value("${SFM_UI_URL:http://localhost:1235/s-forms-manager}")
+    private String sformsManagerUIUrl;
+
+    @Value("${SFM_BACKEND_URL:http://localhost:1235/services/s-forms-manager}")
+    private String sformsManagerBackendUrl;
+
+    @Value("${RM_UI_URL:http://localhost:1235/record-manager}")
+    private String recordManagerUrl;
+
+    @Value("${SFE_UI_URL:https://tomasklima.vercel.app/?formUrl=}")
+    private String sformsEditorUrl;
 
     @Autowired
     public TicketingController(TicketingService ticketingService, RecordService recordService, TicketToProjectRelationsService ticketToProjectRelationsService, RemoteFormGenJsonLoader remoteFormGenJsonLoader, RemoteDataProcessingOrchestrator processingService, ProjectService projectService, QuestionTemplateService questionTemplateService) {
@@ -162,11 +176,11 @@ public class TicketingController {
         metadata.forEach((key, value) -> sb.append("- ").append(key).append(": ").append(value).append("\n"));
 
         //Add link to the ticket description - SForms Editor [generalize the url?]
-        String sfeLink = "https://tomasklima.vercel.app/?formUrl=http://localhost:8080/rest/sforms/s-forms-json-ld/" + project.getKey() + "/" + formGenURI.substring(formGenURI.lastIndexOf('/') + 1);
+        String sfeLink = sformsEditorUrl + sformsManagerBackendUrl + "/rest/sforms/s-forms-json-ld/" + project.getKey() + "/" + formGenURI.substring(formGenURI.lastIndexOf('/') + 1);
         sb.append("\nLink to the SForms Editor: ").append(sfeLink).append("\n");
 
         //Add link to the ticket description - Record Manager
-        String rmLink = "http://localhost:1235/record-manager/records/" + recordKey;
+        String rmLink = recordManagerUrl + "/records/" + recordKey;
         sb.append("\nLink to the Record Manager: ").append(rmLink).append("\n");
 
         createTicketRequest.setRecordContextUri(formGenURI);
@@ -179,7 +193,7 @@ public class TicketingController {
         RecordSnapshot recordSnapshot = recordService.findByRemoteContextUri(projectName, formGenURI)
                 .orElseThrow(() -> new ResourceNotFoundException("Record Snapshot with context uri " + formGenURI + " not found"));
 
-        String linkUrl = "http://localhost:3000/browse/forms/" + projectName + "/record/" + recordSnapshot.getKey();
+        String linkUrl = sformsManagerUIUrl + "/browse/forms/" + projectName + "/record/" + recordSnapshot.getKey();
         sb.append("\nLink to the SForms Manager: ").append(linkUrl).append("\n");
         createTicketRequest.setDescription(sb.toString());
         createTicketRequest.setProjectName(projectName);
