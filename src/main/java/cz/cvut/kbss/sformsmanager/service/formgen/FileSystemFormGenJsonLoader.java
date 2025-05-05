@@ -19,6 +19,17 @@ public class FileSystemFormGenJsonLoader implements FormGenJsonLoader {
     public final String CONTEXT_SUFIX = "#mock";
 
     @Override
+    public SFormsRawJson getFormGenRawJson(String projectName, URI contextUri, String version) throws IOException {
+        String contextUriString = contextUri.toString();
+        String fileName = contextUriString.replace(CONTEXT_PREFIX, "").replace(CONTEXT_SUFIX, "") + ".json";
+        try {
+            return new SFormsRawJson(projectName, contextUriString, new String(Files.readAllBytes(ResourceUtils.getFile(FILE_SYSTEM_FORMGEN_FOLDER + fileName).toPath())));
+        } catch (FileNotFoundException e) {
+            return null;
+        }
+    }
+
+    @Override
     public SFormsRawJson getFormGenRawJson(String projectName, URI contextUri) throws IOException {
         String contextUriString = contextUri.toString();
         String fileName = contextUriString.replace(CONTEXT_PREFIX, "").replace(CONTEXT_SUFIX, "") + ".json";
