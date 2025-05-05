@@ -56,7 +56,7 @@ public class TrelloService implements TicketingService {
     }
 
     @Override
-    public String createTicket(String projectName, Ticket ticket) {
+    public String createTicket(String projectName, Ticket ticket, String version) {
         Card card = new Card();
         card.setName(ticket.getName());
         card.setDesc(ticket.getDescription());
@@ -74,6 +74,7 @@ public class TrelloService implements TicketingService {
         // the Trello API does not work as expected here!
         // card.addLabels(getProjectLabel(projectName).getId());
         card.addLabels(projectName);
+        card.addLabels(version);
 
         // get the custom field definitions
         Map<String, TrelloClientWithCustomFields.CustomFieldDefinition> customFieldDefinitions = trelloClient.getCustomFieldDefinitions(boardId);

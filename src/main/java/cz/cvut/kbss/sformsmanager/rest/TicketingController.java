@@ -121,7 +121,7 @@ public class TicketingController {
         TicketDTO ticket = new TicketDTO(createTicketRequest.getName(), createTicketRequest.getDescription(), null, relations);
 
         // return URL of created ticket
-        return ticketingService.createTicket(createTicketRequest.getProjectName(), ticket);
+        return ticketingService.createTicket(createTicketRequest.getProjectName(), ticket, "");
     }
 
     /***
@@ -161,11 +161,13 @@ public class TicketingController {
         String phase = metadata.get("Phase");
         String label = metadata.get("Label");
         String authorEmail = metadata.get("Email");
+        String version = metadata.get("Version").substring(metadata.get("Version").lastIndexOf("/") + 1);
         createTicketRequest.setName("Record issue: " + label);
         // we do not need phase in description
         metadata.remove("Phase");
         metadata.remove("Label");
         metadata.remove("email");
+        metadata.remove("Version");
         if (phase == null || !phase.equals(RecordPhase.REJECTED.toString())) {
             return "No ticket created. Record phase is not 'rejected'.";
         }
@@ -201,7 +203,7 @@ public class TicketingController {
         TicketToProjectRelations relations = ticketToProjectRelationsService.createRelationsFromRequest(createTicketRequest);
 
         TicketDTO ticket = new TicketDTO(createTicketRequest.getName(), createTicketRequest.getDescription(), null, relations, authorEmail);
-        return ticketingService.createTicket(createTicketRequest.getProjectName(), ticket);
+        return ticketingService.createTicket(createTicketRequest.getProjectName(), ticket, version);
     }
 
     private Stream<TicketDTO> getProjectTicketsStream(String projectName) {
