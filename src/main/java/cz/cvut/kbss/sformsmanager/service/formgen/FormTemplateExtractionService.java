@@ -187,7 +187,7 @@ public class FormTemplateExtractionService {
                         Map<String, Object> versionNode = new HashMap<>();
                         arrayList.add(versionNode);
                         String baseUri = updatedVersion.substring(0, updatedVersion.lastIndexOf('/')); // Remove the last part after '/'
-                        versionNode.put("@id", baseUri); // Set the @id to the base URI
+                        versionNode.put("@id", updatedVersion);
                         String obsoleteVersionDefiniton = remoteFormGenJsonLoader.exportGraph(baseUri, repositoryUrl);
                         remoteFormGenJsonLoader.deleteGraph(baseUri, repositoryUrl);
                         remoteFormGenJsonLoader.importGraph(version, repositoryUrl, obsoleteVersionDefiniton);
