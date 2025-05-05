@@ -133,6 +133,10 @@ services:
       - rdf4j-server
     environment:
       RM_BACKEND_API_URL: "${PUBLIC_ORIGIN:-http://localhost:${INTERNAL_HOST_PORT:-1235}}${APP_ROOT_PATH:-}/services/record-manager-server"
+      RM_UI_URL: "${PUBLIC_ORIGIN:-http://localhost:${INTERNAL_HOST_PORT:-1235}}${APP_ROOT_PATH:-}/record-manager"
+      SFM_UI_URL: "${PUBLIC_ORIGIN:-http://localhost:${INTERNAL_HOST_PORT:-1235}}${APP_ROOT_PATH:-}/s-forms-manager"
+      SFM_BACKEND_URL: "${PUBLIC_ORIGIN:-http://localhost:${INTERNAL_HOST_PORT:-1235}}${APP_ROOT_PATH:-}/services/s-forms-manager"
+      SFE_UI_URL: "https://tomasklima.vercel.app/?formUrl="
       RDF4J_REPOSITORY_URL: "http://rdf4j-server:8080/rdf4j-server/repositories/s-forms-manager"
       DEFAULT_PROJECT_NAME: "aviatics-test"
       APP_REPOSITORY_URL: "http://db-server:7200/repositories/record-manager-app"
