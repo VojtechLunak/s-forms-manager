@@ -36,7 +36,7 @@ public class RemoteFormGenJsonLoader implements FormGenJsonLoader {
     private static final String RECORD_GRAPH_ID_PARAM = "recordGraphId";
     private static final String FORM_TEMPLATE_VERSION = "formTemplateVersion";
 
-    @Value("${RM_BACKEND_API_URL:}")
+    @Value("${RM_BACKEND_API_URL:http://localhost:1235/services/record-manager-server}")
     private String RECORD_MANAGER_API_URL;
 
     @Autowired
@@ -416,10 +416,9 @@ public class RemoteFormGenJsonLoader implements FormGenJsonLoader {
 
     public void changeRecordPhaseForAllRecords(RecordPhase recordPhase) {
         RestTemplate restTemplate = new RestTemplate();
-        restTemplate.exchange(
-                RECORD_MANAGER_API_URL + "/rest/external/open/all",
-                HttpMethod.GET,
-                null,
+        String operationUrl = RECORD_MANAGER_API_URL + "/rest/external/open/all";
+        restTemplate.getForObject(
+                operationUrl,
                 String.class
         );
     }
@@ -457,10 +456,9 @@ public class RemoteFormGenJsonLoader implements FormGenJsonLoader {
             log.warn("Failed to parse metadata SPARQL result", e);
         }
 
-        restTemplate.exchange(
-                RECORD_MANAGER_API_URL + "/rest/external/open/" + recordIRISparql.substring(recordIRISparql.lastIndexOf("/") + 1),
-                HttpMethod.GET,
-                null,
+        String operationUrl = RECORD_MANAGER_API_URL + "/rest/external/open/" + recordIRISparql.substring(recordIRISparql.lastIndexOf("/") + 1);
+        restTemplate.getForEntity(
+                operationUrl,
                 String.class
         );
     }

@@ -18,9 +18,10 @@ ex1:as-show-advanced-888 a doc:question ;
 
 ex1:form-root a doc:question ;
     a form:form-template ;
-    dcterms:hasVersion <https://example.org/sfc-example-1/form-root/0.0.2> ;
+    dcterms:hasVersion <https://example.org/sfc-example-1/form-root/0.0.1> ;
     rdfs:label "Form example 1" ;
     rdfs:comment "First example of a form" ;
+    dcterms:created "2025-05-04T18:00:56.263221400Z" ;
     doc:has_related_question ex1:age-1063,
         ex1:answerable-section-with-advanced-switch,
         ex1:cena-6557,
