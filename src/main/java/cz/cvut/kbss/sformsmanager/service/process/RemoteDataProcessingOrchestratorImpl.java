@@ -120,6 +120,7 @@ public class RemoteDataProcessingOrchestratorImpl implements RemoteDataProcessin
 
         // FormTemplateVersion
         String formTemplateVersionKey = ObjectUtils.createKeyForContext(projectName, processor.getAllQuestionOriginsPathsHash());
+        formTemplateVersionKey = formTemplateVersionKey + String.join("", formTemplateVersionString.substring(formTemplateVersionString.lastIndexOf("/") + 1).split("\\."));
         Optional<FormTemplateVersion> formTemplateVersionOpt = formTemplateVersionDAO.findByKey(projectName, formTemplateVersionKey);
 
         FormTemplateVersion formTemplateVersion;

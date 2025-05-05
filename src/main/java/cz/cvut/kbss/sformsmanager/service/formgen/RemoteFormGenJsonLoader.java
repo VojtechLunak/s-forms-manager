@@ -34,6 +34,7 @@ public class RemoteFormGenJsonLoader implements FormGenJsonLoader {
     private static final String REPOSITORY_URL_PARAM = "repositoryUrl";
     private static final String FORMGEN_REPOSITORY_URL_PARAM = "formGenRepositoryUrl";
     private static final String RECORD_GRAPH_ID_PARAM = "recordGraphId";
+    private static final String FORM_TEMPLATE_VERSION = "formTemplateVersion";
 
     @Value("${RM_BACKEND_API_URL:}")
     private String RECORD_MANAGER_API_URL;
@@ -43,6 +44,29 @@ public class RemoteFormGenJsonLoader implements FormGenJsonLoader {
         this.dataLoader = dataLoader;
         this.projectDAO = projectDAO;
         this.repository = repository;
+    }
+
+    public SFormsRawJson getFormGenRawJson(String projectName, URI contextUri, String version) throws URISyntaxException {
+        Project project = projectDAO.findByKey(projectName, projectName).orElseThrow(
+                () -> new RuntimeException(String.format("Repository connection with project descriptor '%s' does not exist.", projectName)));
+
+        final Map<String, String> params = new HashMap<>();
+        params.put(RECORD_GRAPH_ID_PARAM, contextUri.toString());
+        params.put(REPOSITORY_URL_PARAM, project.getAppRepositoryUrl());
+        params.put(FORMGEN_REPOSITORY_URL_PARAM, project.getFormGenRepositoryUrl());
+        params.put(FORM_TEMPLATE_VERSION, version);
+
+        log.info("Trying to get raw JSONLD data from {}, formgen: {}", project.getAppRepositoryUrl(), project.getFormGenRepositoryUrl());
+
+        if(Objects.equals(project.getAppRepositoryUrl(), "http://localhost:1235/services/db-server/repositories/record-manager-app")) {
+            params.put(REPOSITORY_URL_PARAM, "http://db-server:7200/repositories/record-manager-app");
+        }
+        if(Objects.equals(project.getFormGenRepositoryUrl(), "http://localhost:1235/services/db-server/repositories/record-manager-formgen")) {
+            params.put(FORMGEN_REPOSITORY_URL_PARAM, "http://db-server:7200/repositories/record-manager-formgen");
+        }
+
+        String rawFormJson = dataLoader.loadDataFromUrl(project.getFormGenServiceUrl(), params, Collections.emptyMap());
+        return new SFormsRawJson(projectName, contextUri.toString(), rawFormJson);
     }
 
     /**

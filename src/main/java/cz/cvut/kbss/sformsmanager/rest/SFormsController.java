@@ -55,6 +55,16 @@ public class SFormsController {
         return formGenCachedService.getFormGenRawJson(projectName, URI.create(contextUri)).getRawJson();
     }
 
+    @RequestMapping(method = RequestMethod.POST, path = "s-forms-json-ld/version")
+    public String getFormGenRawJsonForVersion(
+            @RequestParam(value = "projectName") String projectName,
+            @RequestParam(value = "contextUri") String contextUri,
+            @RequestParam(value = "version") String formTemplateVersion
+    ) throws URISyntaxException, IOException {
+        String versionUri = "https://example.org/sfc-example-1/form-root/" + formTemplateVersion;
+        return formGenCachedService.getFormGenRawJson(projectName, URI.create(contextUri), versionUri).getRawJson();
+    }
+
     @RequestMapping(method = RequestMethod.GET, path = "s-forms-json-ld/{projectName}/{contextUri}")
     public String getFormGenRawJsonGet(
             @PathVariable(value = "projectName") String projectName,
