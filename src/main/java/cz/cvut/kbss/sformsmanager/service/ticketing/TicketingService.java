@@ -18,6 +18,8 @@ public interface TicketingService {
      */
     String createTicket(String projectName, Ticket ticket, String version);
 
+    String createTicket(String projectName, Ticket ticket, String version, String state);
+
     TicketToProjectRelations createRelations(String formRelationId, String formVersionRelationId, String questionRelationId);
 
     void moveTicketToDeployed(String cardId) throws Exception;

@@ -41,9 +41,10 @@ public class TrelloService implements TicketingService {
                 .filter(card -> card.getLabels().stream().anyMatch(label -> label.getName().equals(projectName)))
                 .map(card -> {
                     Map<String, String> customFields = findTicketCustomFields(card.getId());
+                    String listName = this.getListNameFromId(card.getIdList());
                     TrelloCustomFields fields = new TrelloCustomFields(customFields);
 
-                    return new TrelloTicket(card.getName(), card.getDesc(), card.getUrl(), fields);
+                    return new TrelloTicket(card.getName(), card.getDesc(), card.getUrl(), fields, "", listName);
                 }).collect(Collectors.toList());
     }
 
@@ -53,6 +54,15 @@ public class TrelloService implements TicketingService {
         return trelloClient.getCardCustomFields(ticketId).stream()
                 .map(cf -> new TrelloCustomField(customFieldDefinitions.get(cf.getIdCustomField()).getName(), cf.getValue().getText()))
                 .collect(Collectors.toMap(cf -> cf.getName(), cf -> cf.getValue()));
+    }
+
+    @Override
+    public String createTicket(String projectName, Ticket ticket, String version, String state) {
+        return this.createTicket(
+                projectName,
+                ticket,
+                version
+        );
     }
 
     @Override
@@ -185,6 +195,19 @@ public class TrelloService implements TicketingService {
                 .filter(card -> card.getIdShort().equals(shortId))
                 .findAny()
                 .orElseThrow(() -> new TrelloException("Card with short ID: " + shortId + " not found."));
+    }
+
+    private String getListNameFromId(String listId) {
+        List<TList> boardLists = trelloClient.getBoardLists(boardId);
+        if (boardLists.isEmpty()) {
+            throw new TrelloException("Trello board does not have any lists!");
+        }
+
+        return boardLists.stream()
+                .filter(list -> list.getId().equals(listId))
+                .map(list -> list.getName())
+                .findFirst()
+                .orElseThrow(() -> new TrelloException("Trello list with ID: " + listId + " not found."));
     }
 
     private String getNewCardListId() {

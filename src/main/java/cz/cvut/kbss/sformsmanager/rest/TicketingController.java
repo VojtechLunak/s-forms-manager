@@ -213,7 +213,7 @@ public class TicketingController {
                             .map(QuestionTemplateSnapshot::getLabel)
                             .orElse(null);
                     TicketDTO.TicketToRelationsDTO relationsDTO = TicketDTO.TicketToRelationsDTO.createFormTicketRelations(ticket.getTicketCustomRelations(), qtsLabel);
-                    return new TicketDTO(ticket.getName(), ticket.getDescription(), ticket.getUrl(), relationsDTO);
+                    return new TicketDTO(ticket.getName(), ticket.getDescription(), ticket.getUrl(), relationsDTO, ticket.getMemberEmail(), ticket.getState());
                 });
     }
 }
