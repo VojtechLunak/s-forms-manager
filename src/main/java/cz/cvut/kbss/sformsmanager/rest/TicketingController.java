@@ -40,7 +40,6 @@ public class TicketingController {
     private final RemoteFormGenJsonLoader remoteFormGenJsonLoader;
     private final RemoteDataProcessingOrchestrator processingService;
     private final ProjectService projectService;
-    private final ContextService contextService;
     private final QuestionTemplateService questionTemplateService;
 
     @Value("${SFM_UI_URL:http://localhost:1235/s-forms-manager}")
