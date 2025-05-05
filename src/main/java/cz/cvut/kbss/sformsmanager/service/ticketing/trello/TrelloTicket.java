@@ -13,6 +13,8 @@ public class TrelloTicket implements Ticket {
 
     private String memberEmail;
 
+    private String state;
+
     private final TrelloCustomFields customFields;
 
     public TrelloTicket(String name, String description, String url, TrelloCustomFields customFields) {
@@ -25,6 +27,17 @@ public class TrelloTicket implements Ticket {
     public TrelloTicket(String name, String description, String url, TrelloCustomFields customFields, String memberEmail) {
         this(name, description, url, customFields);
         this.memberEmail = memberEmail;
+    }
+
+    public TrelloTicket(String name, String description, String url, TrelloCustomFields customFields, String memberEmail, String state) {
+        this(name, description, url, customFields);
+        this.memberEmail = memberEmail;
+        this.state = state;
+    }
+    
+    @Override
+    public String getState() {
+        return state;
     }
 
     @Override
