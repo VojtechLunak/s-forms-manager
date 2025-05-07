@@ -94,7 +94,7 @@ services:
       - db-server:/opt/graphdb/home
 
   s-forms-manager-ui:
-    image: ghcr.io/vojtechlunak/s-forms-manager-ui:pr-3
+    image: ghcr.io/vojtechlunak/s-forms-manager-ui:pr-5
     container_name: ${RECORD_SET_NAME}-s-forms-manager-ui
     expose:
       - "80"
