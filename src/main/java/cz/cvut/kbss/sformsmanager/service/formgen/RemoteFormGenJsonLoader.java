@@ -35,6 +35,7 @@ public class RemoteFormGenJsonLoader implements FormGenJsonLoader {
     private static final String FORMGEN_REPOSITORY_URL_PARAM = "formGenRepositoryUrl";
     private static final String RECORD_GRAPH_ID_PARAM = "recordGraphId";
     private static final String FORM_TEMPLATE_VERSION = "formTemplateVersion";
+    private static final String IGNORE_INVALID_DATA = "isIgnoreInvalidData";
 
     @Value("${RM_BACKEND_API_URL:http://localhost:1235/services/record-manager-server}")
     private String RECORD_MANAGER_API_URL;
@@ -46,27 +47,16 @@ public class RemoteFormGenJsonLoader implements FormGenJsonLoader {
         this.repository = repository;
     }
 
-    public SFormsRawJson getFormGenRawJson(String projectName, URI contextUri, String version) throws URISyntaxException {
-        Project project = projectDAO.findByKey(projectName, projectName).orElseThrow(
-                () -> new RuntimeException(String.format("Repository connection with project descriptor '%s' does not exist.", projectName)));
-
+    public SFormsRawJson getFormGenRawJson(String projectName, URI contextUri, boolean ignoreInvalidData) throws URISyntaxException {
         final Map<String, String> params = new HashMap<>();
-        params.put(RECORD_GRAPH_ID_PARAM, contextUri.toString());
-        params.put(REPOSITORY_URL_PARAM, project.getAppRepositoryUrl());
-        params.put(FORMGEN_REPOSITORY_URL_PARAM, project.getFormGenRepositoryUrl());
+        params.put(IGNORE_INVALID_DATA, String.valueOf(ignoreInvalidData));
+        return this.getFormGenRawJson(projectName, contextUri.toString(), params);
+    }
+
+    public SFormsRawJson getFormGenRawJson(String projectName, URI contextUri, String version) throws URISyntaxException {
+        final Map<String, String> params = new HashMap<>();
         params.put(FORM_TEMPLATE_VERSION, version);
-
-        log.info("Trying to get raw JSONLD data from {}, formgen: {}", project.getAppRepositoryUrl(), project.getFormGenRepositoryUrl());
-
-        if(Objects.equals(project.getAppRepositoryUrl(), "http://localhost:1235/services/db-server/repositories/record-manager-app")) {
-            params.put(REPOSITORY_URL_PARAM, "http://db-server:7200/repositories/record-manager-app");
-        }
-        if(Objects.equals(project.getFormGenRepositoryUrl(), "http://localhost:1235/services/db-server/repositories/record-manager-formgen")) {
-            params.put(FORMGEN_REPOSITORY_URL_PARAM, "http://db-server:7200/repositories/record-manager-formgen");
-        }
-
-        String rawFormJson = dataLoader.loadDataFromUrl(project.getFormGenServiceUrl(), params, Collections.emptyMap());
-        return new SFormsRawJson(projectName, contextUri.toString(), rawFormJson);
+        return this.getFormGenRawJson(projectName, contextUri.toString(), params);
     }
 
     /**
@@ -99,6 +89,29 @@ public class RemoteFormGenJsonLoader implements FormGenJsonLoader {
 
         String rawFormJson = dataLoader.loadDataFromUrl(project.getFormGenServiceUrl(), params, Collections.emptyMap());
         return new SFormsRawJson(projectName, contextUri.toString(), rawFormJson);
+    }
+
+    private SFormsRawJson getFormGenRawJson(String projectName, String contextUri, Map<String, String> passedParams) throws URISyntaxException {
+        Project project = projectDAO.findByKey(projectName, projectName).orElseThrow(
+                () -> new RuntimeException(String.format("Repository connection with project descriptor '%s' does not exist.", projectName)));
+
+        final Map<String, String> params = new HashMap<>();
+        params.put(RECORD_GRAPH_ID_PARAM, contextUri);
+        params.put(REPOSITORY_URL_PARAM, project.getAppRepositoryUrl());
+        params.put(FORMGEN_REPOSITORY_URL_PARAM, project.getFormGenRepositoryUrl());
+        params.putAll(passedParams);
+
+        log.info("Trying to get raw JSONLD data from {}, formgen: {}", project.getAppRepositoryUrl(), project.getFormGenRepositoryUrl());
+
+        if(Objects.equals(project.getAppRepositoryUrl(), "http://localhost:1235/services/db-server/repositories/record-manager-app")) {
+            params.put(REPOSITORY_URL_PARAM, "http://db-server:7200/repositories/record-manager-app");
+        }
+        if(Objects.equals(project.getFormGenRepositoryUrl(), "http://localhost:1235/services/db-server/repositories/record-manager-formgen")) {
+            params.put(FORMGEN_REPOSITORY_URL_PARAM, "http://db-server:7200/repositories/record-manager-formgen");
+        }
+
+        String rawFormJson = dataLoader.loadDataFromUrl(project.getFormGenServiceUrl(), params, Collections.emptyMap());
+        return new SFormsRawJson(project.getKey(), contextUri, rawFormJson);
     }
 
     public String exportGraph(String contextUri, String sourceRepoUrl) {

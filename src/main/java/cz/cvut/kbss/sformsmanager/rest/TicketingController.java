@@ -144,6 +144,7 @@ public class TicketingController {
 
         // get the default project
         Project project = projectService.findAll().get(0);
+        boolean allDataRendered = true;
 
         // create virtual formGen from updated record in case of REJECT or COMPLETE
         remoteFormGenJsonLoader.generateVirtualFormGen(record, formGenURI, project.getAppRepositoryUrl());
@@ -156,6 +157,12 @@ public class TicketingController {
 
         // delete the virtual formGen record from the app repository
         remoteFormGenJsonLoader.deleteGraph(formGenURI, project.getAppRepositoryUrl());
+
+        try {
+            remoteFormGenJsonLoader.getFormGenRawJson(project.getKey(), URI.create(formGenURI), true);
+        } catch (Exception e) {
+            allDataRendered = false;
+        }
 
         Map<String, String> metadata = remoteFormGenJsonLoader.getRecordMetadata(formGenURI, record, project.getFormGenRepositoryUrl());
         String phase = metadata.get("Phase");
@@ -173,6 +180,9 @@ public class TicketingController {
         }
 
         StringBuilder sb = new StringBuilder();
+        if (!allDataRendered) {
+            sb.append("TICKET CREATED FROM RECORD WITHOUT ALL DATA RENDERED!\n");
+        }
         sb.append("Record metadata:\n");
         metadata.forEach((key, value) -> sb.append("- ").append(key).append(": ").append(value).append("\n"));
 
