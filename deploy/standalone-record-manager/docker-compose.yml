@@ -83,8 +83,8 @@ services:
   s-pipes-engine:
     image: ghcr.io/kbss-cvut/ava-model/s-pipes-engine:latest
     container_name: ${RECORD_SET_NAME}-s-pipes-engine
-    ports:
-      - "9999:8080"
+    expose:
+      - "8080"
     restart: always
     depends_on:
       - db-server
@@ -149,8 +149,8 @@ services:
     image:  ${RECORD_SET_NAME:-rm}-rdf4j-server
     container_name: ${RECORD_SET_NAME:-rm}-rdf4j-server
     restart: always
-    ports:
-      - "8090:8080"
+    expose:
+      - "8080"
     volumes:
       - rdf4j-data:/var/rdf4j/server/repositories
 
