@@ -7,6 +7,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 public interface FormGenJsonLoader {
+    SFormsRawJson getFormGenRawJson(String projectName, URI contextUri, boolean ignoreInvalidData) throws URISyntaxException, IOException;
+
     SFormsRawJson getFormGenRawJson(String projectName, URI contextUri, String version) throws URISyntaxException, IOException;
 
     SFormsRawJson getFormGenRawJson(String projectName, URI contextUri) throws URISyntaxException, IOException;

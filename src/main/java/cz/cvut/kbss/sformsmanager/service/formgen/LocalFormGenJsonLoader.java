@@ -34,25 +34,14 @@ public class LocalFormGenJsonLoader implements FormGenJsonLoader {
     }
 
     @Override
+    public SFormsRawJson getFormGenRawJson(String projectName, URI contextUri, boolean ignoreInvalidData) {
+        return getFormGenRawJson(projectName, contextUri);
+    }
+
+
+    @Override
     public SFormsRawJson getFormGenRawJson(String projectName, URI contextUri, String version) {
-        Optional<Resource> resource = getFormGenResource(projectName, contextUri);
-//        if (!resource.isPresent()) {
-        if (true) { // TODO: fix when caching is enabled
-            return null;
-        }
-
-        RepositoryConnection connection = repository.getConnection();
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        JSONLDWriter writer = new JSONLDWriter(bos);
-
-        WriterConfig config = new WriterConfig();
-        config.set(JSONLDSettings.COMPACT_ARRAYS, true);
-        config.set(JSONLDSettings.JSONLD_MODE, JSONLDMode.FLATTEN);
-
-        connection.export(writer, resource.get());
-        connection.close();
-
-        return new SFormsRawJson(projectName, contextUri.toString(), new String(bos.toByteArray()));
+       return getFormGenRawJson(projectName, contextUri);
     }
 
     /**

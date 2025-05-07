@@ -37,34 +37,14 @@ public class FormGenCachedService implements FormGenJsonLoader {
         this.repository = repository;
     }
 
+    @Override
+    public SFormsRawJson getFormGenRawJson(String projectName, URI contextUri, boolean ignoreInvalidData) throws URISyntaxException, IOException {
+        return localFormGenJsonLoader.getFormGenRawJson(projectName, contextUri, ignoreInvalidData);
+    }
 
     @Override
     public SFormsRawJson getFormGenRawJson(String projectName, URI contextUri, String version) throws URISyntaxException, IOException {
-        SFormsRawJson localFormGen = localFormGenJsonLoader.getFormGenRawJson(projectName, contextUri, version);
-        if (localFormGen != null) {
-            // already cached
-            return localFormGen;
-        }
-
-        SFormsRawJson formGen = null;
-        if (debug) {
-            log.trace("Trying to get MOCK data from file system. Project name: {}. ContextUri: {}.", projectName, contextUri.toString());
-            formGen = fileSystemFormGenJsonLoader.getFormGenRawJson(projectName, contextUri, version);
-        }
-
-        if (formGen == null) {
-            formGen = remoteFormGenJsonLoader.getFormGenRawJson(projectName, contextUri, version);
-        }
-
-        // save (cache) formGen to local repository
-        Resource contextResource = localFormGenJsonLoader.createFormGenSimpleResource(projectName, contextUri);
-        try {
-            repository.getConnection().add(new StringReader(formGen.getRawJson()), null, RDFFormat.JSONLD, contextResource);
-        } catch (RDFParseException e) {
-            log.error("Error when saving formGen to local repository.", e);
-        }
-
-        return formGen;
+        return localFormGenJsonLoader.getFormGenRawJson(projectName, contextUri, version);
     }
 
     /**

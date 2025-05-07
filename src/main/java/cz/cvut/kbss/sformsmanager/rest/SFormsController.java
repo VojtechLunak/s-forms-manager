@@ -17,6 +17,7 @@ package cz.cvut.kbss.sformsmanager.rest;
 import cz.cvut.kbss.sformsmanager.model.persisted.local.Project;
 import cz.cvut.kbss.sformsmanager.service.formgen.FormGenCachedService;
 import cz.cvut.kbss.sformsmanager.service.formgen.FormTemplateExtractionService;
+import cz.cvut.kbss.sformsmanager.service.formgen.RemoteFormGenJsonLoader;
 import cz.cvut.kbss.sformsmanager.service.model.local.ProjectService;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,14 +38,16 @@ public class SFormsController {
     private static final Logger log = org.slf4j.LoggerFactory.getLogger(SFormsController.class);
 
     private final FormGenCachedService formGenCachedService;
+    private final RemoteFormGenJsonLoader remoteFormGenJsonLoader;
     private final FormTemplateExtractionService formTemplateExtractionService;
     private final ProjectService projectService;
 
     @Autowired
-    public SFormsController(FormGenCachedService formGenCachedService, FormTemplateExtractionService formTemplateExtractionService, ProjectService projectService) {
+    public SFormsController(FormGenCachedService formGenCachedService, FormTemplateExtractionService formTemplateExtractionService, ProjectService projectService, RemoteFormGenJsonLoader remoteFormGenJsonLoader) {
         this.formGenCachedService = formGenCachedService;
         this.formTemplateExtractionService = formTemplateExtractionService;
         this.projectService = projectService;
+        this.remoteFormGenJsonLoader = remoteFormGenJsonLoader;
     }
 
     @RequestMapping(method = RequestMethod.POST, path = "s-forms-json-ld")
@@ -62,7 +65,7 @@ public class SFormsController {
             @RequestParam(value = "version") String formTemplateVersion
     ) throws URISyntaxException, IOException {
         String versionUri = "https://example.org/sfc-example-1/form-root/" + formTemplateVersion;
-        return formGenCachedService.getFormGenRawJson(projectName, URI.create(contextUri), versionUri).getRawJson();
+        return remoteFormGenJsonLoader.getFormGenRawJson(projectName, URI.create(contextUri), versionUri).getRawJson();
     }
 
     @RequestMapping(method = RequestMethod.GET, path = "s-forms-json-ld/{projectName}/{contextUri}")
