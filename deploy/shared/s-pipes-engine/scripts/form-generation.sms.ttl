@@ -258,7 +258,7 @@ form-mod:bind-ignore-invalid-data
       a sp:Select ;
       sp:text """SELECT ?ignoreInvalidData
 WHERE {
-    #BIND(IF(?isIgnoreInvalidData = \"true\", true, false) as ?ignoreInvalidData)
+    BIND(IF(?isIgnoreInvalidData = \"true\", true, false) as ?ignoreInvalidData)
 }""" ;
     ] ;
   sml:replace true ;
