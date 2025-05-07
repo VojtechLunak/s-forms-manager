@@ -56,6 +56,7 @@ public class RemoteFormGenJsonLoader implements FormGenJsonLoader {
     public SFormsRawJson getFormGenRawJson(String projectName, URI contextUri, String version) throws URISyntaxException {
         final Map<String, String> params = new HashMap<>();
         params.put(FORM_TEMPLATE_VERSION, version);
+        params.put(IGNORE_INVALID_DATA, "true");
         return this.getFormGenRawJson(projectName, contextUri.toString(), params);
     }
 
